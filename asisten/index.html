@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portal Asisten - Lab Fisika Terapan</title>
+    <link rel="icon" type="image/jpeg" href="https://i.ibb.co.com/nqxh13MB/logo-fister.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#121212">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://i.ibb.co.com/nqxh13MB/logo-fister.png">
+    <style>
+        body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background-color: #121212; color: #e0e0e0; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        .surface-card { background-color: #1e1e1e; border-radius: 20px; }
+        .surface-container { background-color: #2a2a2a; border-radius: 16px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes loadingBar { 0% { width: 0%; left: 0; } 50% { width: 100%; left: 0; } 100% { width: 0%; left: 100%; } }
+        .refresh-bar-anim { animation: loadingBar 1.5s infinite ease-in-out; }
+        
+        .tab-content { display: none; animation: fadeIn 0.3s ease-out forwards; }
+        .tab-content.active { display: block; }
+        .login-hide { display: none !important; }
+        
+        aside { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        main { transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar-text { transition: opacity 0.2s; white-space: nowrap; overflow: hidden; }
+        
+        @media (max-width: 1024px) and (min-width: 768px) {
+            aside { width: 88px; } main { margin-left: 88px; } .sidebar-text { opacity: 0; width: 0; display: none; }
+            .app-nav-item { justify-content: center; padding: 12px; border-radius: 100px; } .sidebar-header { justify-content: center; padding-left: 0; padding-right: 0; }
+        }
+        
+        .app-nav-item.active { background-color: rgba(37, 99, 235, 0.15); color: #ffffff; font-weight: 700; }
+        .mobile-nav-item { flex: 1; display: flex; justify-content: center; align-items: center; padding: 4px 0; color: #888; height: 100%; transition: all 0.2s ease; }
+        .mobile-nav-item i { font-size: 1.1rem; color: #ffffff; opacity: 0.6; }
+        .mobile-nav-item.active .nav-indicator { background-color: rgba(37, 99, 235, 0.25); padding: 6px 18px; border-radius: 100px; }
+        .mobile-nav-item.active i { color: #ffffff; opacity: 1; }
+        
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #424242; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #616161; }
+
+        .line-clamp-custom { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+        details > summary { list-style: none; } details > summary::-webkit-details-marker { display: none; }
+        select option { background: #1e1e1e; color: #e0e0e0; }
+        
+        @keyframes toastSlide { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast-enter { animation: toastSlide 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards; }
+
+        .custom-cb { appearance: none; width: 14px; height: 14px; border: 1px solid #555; border-radius: 4px; background: #1e1e1e; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .custom-cb:checked { background: #2563eb; border-color: #2563eb; }
+        .custom-cb:checked::after { content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: white; font-size: 9px; }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+        @media (min-width: 768px) { .pane-scroll { max-height: calc(100vh - 110px); overflow-y: auto; } }
+
+        details.shift-details[open] > summary { background-color: #252525; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+        details.shift-details[open] > summary i.fa-chevron-down { transform: rotate(180deg); }
+
+        @media (max-width: 768px) {
+        ::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+        * {
+            -ms-overflow-style: none; /* Buat IE/Edge */
+            scrollbar-width: none; /* Buat Firefox */
+        }
+        }
+
+    </style>
+</head>
+<body class="relative min-h-screen flex flex-col antialiased selection:bg-blue-500/30">
+
+    <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2.5 pointer-events-none"></div>
+
+    <div id="top-loading-bar" class="hidden fixed top-0 left-0 w-full h-1 z-[999] overflow-hidden bg-[#1e1e1e]">
+        <div class="h-full bg-blue-500 refresh-bar-anim absolute"></div>
+    </div>
+
+    <div id="loading-view" class="fixed inset-0 z-50 flex items-center justify-center bg-[#121212]">
+        <div class="flex flex-col items-center gap-3">
+            <div class="w-10 h-10 border-4 border-[#2a2a2a] border-t-blue-500 rounded-full animate-spin"></div>
+            <p class="text-gray-400 text-xs font-medium">Memuat...</p>
+        </div>
+    </div>
+
+    <!-- VIEW LOGIN -->
+    <div id="login-view" class="login-hide min-h-screen items-center justify-center p-4 relative z-40 w-full flex bg-[#121212]">
+        <div class="surface-card w-full max-w-sm p-6 shadow-xl border border-[#2a2a2a]">
+            <div class="text-center mb-6">
+                <img src="https://i.ibb.co.com/nqxh13MB/logo-fister.png" class="w-14 h-14 rounded-full mx-auto mb-3 object-cover">
+                <h2 class="text-xl font-bold text-white tracking-tight">Portal Asisten</h2>
+            </div>
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-[11px] font-semibold text-gray-400 mb-1.5 flex items-center gap-1.5"><i class="fa-solid fa-id-card text-white"></i> NIM ASISTEN</label>
+                    <input type="text" id="login-nim" autocomplete="username" placeholder="333..." class="w-full bg-[#121212] border border-[#333333] rounded-xl p-3 text-sm text-white focus:outline-none focus:border-blue-500 transition font-medium">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-gray-400 mb-1.5 flex items-center gap-1.5"><i class="fa-solid fa-key text-white"></i> PASSWORD</label>
+                    <div class="relative">
+                        <input type="password" id="login-pass" autocomplete="current-password" placeholder="••••••••" class="w-full bg-[#121212] border border-[#333333] rounded-xl p-3 text-sm text-white focus:outline-none focus:border-blue-500 transition font-medium pr-10">
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"><i id="eye-icon" class="fa-solid fa-eye"></i></button>
+                    </div>
+                </div>
+                <div id="login-error" class="hidden text-red-400 text-xs p-2 bg-red-500/10 rounded-lg text-center font-medium">
+                    <i class="fa-solid fa-circle-exclamation mr-1 text-white"></i> Akses ditolak.
+                </div>
+                <button type="submit" id="btn-login" class="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition text-sm">Masuk</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- VIEW DASHBOARD UTAMA -->
+    <div id="app-view" class="login-hide min-h-screen relative z-30 w-full flex">
+        <header class="md:hidden fixed top-0 left-0 w-full z-40 bg-[#1c1c1c] border-b border-[#2a2a2a] px-4 py-3 flex justify-between items-center shadow-sm">
+            <div class="flex items-center gap-2.5"><img src="https://i.ibb.co.com/nqxh13MB/logo-fister.png" class="h-6 w-6 rounded-full object-cover"><span class="font-bold text-white text-[14px]">Lab Fister</span></div>
+            <button onclick="refreshData()" class="text-white hover:text-blue-400 transition bg-[#2a2a2a] rounded-full flex items-center justify-center w-7 h-7"><i class="fa-solid fa-rotate-right text-[11px]"></i></button>
+        </header>
+
+        <aside class="hidden md:flex flex-col md:w-[88px] lg:w-[220px] bg-[#1a1a1a] border-r border-[#2a2a2a] fixed h-full z-40 py-5 px-3 justify-between transition-all duration-300">
+            <div class="flex flex-col gap-5 w-full">
+                <div class="sidebar-header flex md:justify-center lg:justify-start items-center gap-3 px-1 lg:px-2 transition-all">
+                    <img src="https://i.ibb.co.com/nqxh13MB/logo-fister.png" class="h-9 w-9 rounded-full object-cover shrink-0">
+                    <div class="sidebar-text hidden lg:block"><span class="block font-bold text-[15px] text-white leading-tight">Lab Fister - AST</span><span class="text-[9px] text-gray-400 font-semibold uppercase tracking-wider">Portal Asisten</span></div>
+                </div>
+                <nav class="space-y-1 w-full flex flex-col">
+                    <button onclick="switchAppTab('home')" class="app-nav-item active flex items-center md:justify-center lg:justify-start gap-3 p-3 lg:p-2.5 rounded-full lg:rounded-xl text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200 transition w-full text-left" data-tab="home"><i class="fa-solid fa-house w-5 text-center text-white text-[13px]"></i><span class="sidebar-text hidden lg:block text-[12px] font-medium whitespace-nowrap">Dashboard</span></button>
+                    <button onclick="switchAppTab('jadwal')" class="app-nav-item flex items-center md:justify-center lg:justify-start gap-3 p-3 lg:p-2.5 rounded-full lg:rounded-xl text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200 transition w-full text-left" data-tab="jadwal"><i class="fa-solid fa-calendar-days w-5 text-center text-white text-[13px]"></i><span class="sidebar-text hidden lg:block text-[12px] font-medium whitespace-nowrap">Jadwal Asisten</span></button>
+                    <button onclick="switchAppTab('repo')" class="app-nav-item flex items-center md:justify-center lg:justify-start gap-3 p-3 lg:p-2.5 rounded-full lg:rounded-xl text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200 transition w-full text-left" data-tab="repo"><i class="fa-solid fa-folder w-5 text-center text-white text-[13px]"></i><span class="sidebar-text hidden lg:block text-[12px] font-medium whitespace-nowrap">Repositori</span></button>
+                    <button onclick="switchAppTab('nilai')" class="app-nav-item flex items-center md:justify-center lg:justify-start gap-3 p-3 lg:p-2.5 rounded-full lg:rounded-xl text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200 transition w-full text-left" data-tab="nilai"><i class="fa-solid fa-graduation-cap w-5 text-center text-white text-[13px]"></i><span class="sidebar-text hidden lg:block text-[12px] font-medium whitespace-nowrap">Nilai Praktikan</span></button>
+                    <div class="h-px w-full bg-[#2a2a2a] my-1"></div>
+                    <button onclick="refreshData()" class="app-nav-item flex items-center md:justify-center lg:justify-start gap-3 p-3 lg:p-2.5 rounded-full lg:rounded-xl text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200 transition w-full text-left"><i class="fa-solid fa-rotate-right w-5 text-center text-white text-[13px]"></i><span class="sidebar-text hidden lg:block text-[12px] font-medium whitespace-nowrap">Muat Ulang Data</span></button>
+                </nav>
+            </div>
+            <div class="flex flex-col w-full gap-1">
+                <button onclick="switchAppTab('profil')" class="app-nav-item flex items-center md:justify-center lg:justify-start gap-3 p-3 lg:p-2.5 rounded-full lg:rounded-xl text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200 transition w-full text-left" data-tab="profil"><div id="sidebar-avatar" class="w-5 h-5 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-[9px] shrink-0"></div><span class="sidebar-text hidden lg:block text-[12px] font-medium whitespace-nowrap">Profil Saya</span></button>
+            </div>
+        </aside>
+
+        <main class="flex-1 md:ml-[88px] lg:ml-[220px] pt-14 md:pt-6 pb-20 md:pb-6 p-3 md:p-5 w-full max-w-7xl mx-auto flex flex-col transition-all duration-300">
+            
+            <!-- TAB: HOME -->
+            <section id="app-tab-home" class="tab-content active w-full">
+                <div class="mb-4 flex flex-col md:flex-row md:items-end justify-between gap-2">
+                    <div class="flex-1">
+                        <h1 class="text-lg md:text-2xl font-bold text-white mb-0.5 flex items-center gap-1.5">Halo, <span id="home-greeting-name">Asisten</span> 👋</h1>
+                        <p class="text-xs text-gray-400">Selamat datang di Lab Fister.</p>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1 space-y-4">
+                        <div id="home-reminder-card" class="surface-card border border-[#2a2a2a] shadow-sm p-4">
+                            <div class="animate-pulse h-10 bg-[#2a2a2a] rounded-lg"></div>
+                        </div>
+
+                        <div class="md:hidden">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-[11px] font-bold text-gray-300 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-bullhorn text-white"></i> Informasi</h3>
+                                <button id="btn-edit-p-mob" onclick="toggleEditPengumuman()" class="hidden bg-[#2a2a2a] hover:bg-[#333] border border-[#444] text-gray-300 px-2.5 py-1 rounded-md text-[9px] font-bold flex items-center gap-1 transition shadow-sm focus:outline-none">
+                                    <i class="fa-solid fa-pen-to-square"></i> Edit
+                                </button>
+                            </div>
+                            <div id="dash-pengumuman-mobile" class="flex overflow-x-auto gap-3 pb-2 snap-x custom-scrollbar items-stretch"></div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-[11px] font-bold text-gray-300 mb-2 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-bolt text-white"></i> Pintasan</h3>
+                            <div class="grid grid-cols-2 gap-3 mb-2">
+                                <button onclick="openPresensiAsistenModal()" class="surface-card p-3 flex items-center justify-center gap-2.5 hover:bg-[#252525] transition border border-[#2a2a2a] text-left w-full focus:outline-none">
+                                    <div class="w-8 h-8 rounded-full bg-[#2a2a2a] text-white flex items-center justify-center shrink-0"><i class="fa-solid fa-clipboard-check text-sm"></i></div>
+                                    <div class="text-left w-full"><h4 class="font-bold text-xs text-gray-200 leading-tight">Presensi</h4></div>
+                                </button>
+                                <button onclick="switchAppTab('repo')" class="surface-card p-3 flex items-center justify-center gap-2.5 hover:bg-[#252525] transition border border-[#2a2a2a] text-left w-full focus:outline-none">
+                                    <div class="w-8 h-8 rounded-full bg-[#2a2a2a] text-white flex items-center justify-center shrink-0"><i class="fa-solid fa-folder-open text-sm"></i></div>
+                                    <div class="text-left w-full"><h4 class="font-bold text-xs text-gray-200 leading-tight">Repositori</h4></div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="hidden md:flex flex-col w-1/3 min-w-[300px] max-w-[360px]">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-[11px] font-bold text-gray-300 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-bullhorn text-white"></i> Papan Info</h3>
+                            <button id="btn-edit-p-desk" onclick="toggleEditPengumuman()" class="hidden bg-[#2a2a2a] hover:bg-[#333] border border-[#444] text-gray-300 px-2.5 py-1 rounded-md text-[9px] font-bold flex items-center gap-1 transition shadow-sm focus:outline-none">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                        </div>
+                        <div id="dash-pengumuman-desktop" class="flex-1 space-y-3 overflow-y-auto custom-scrollbar pr-1.5" style="max-height: calc(100vh - 120px);">
+                            <div class="surface-card p-4 animate-pulse h-20 bg-[#1e1e1e] border border-[#2a2a2a]"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="app-tab-jadwal" class="tab-content w-full max-w-5xl mx-auto h-full">
+                
+                <!-- STICKY HEADER MOBILE -->
+                <div class="md:hidden sticky top-[48px] z-30 bg-[#121212] pt-3 pb-1 mb-3 -mx-3 px-3 border-b border-[#2a2a2a] shadow-sm">
+                    <div class="flex justify-between items-center mb-2.5">
+                        <h2 class="text-lg font-bold text-white">Jadwal Asisten</h2>
+                    </div>
+                    <div class="flex gap-2 mb-2 bg-[#1e1e1e] p-1 rounded-full border border-[#333]">
+                        <button onclick="switchJadwalPane('asistensi')" id="pill-asistensi" class="flex-1 py-1.5 text-[11px] font-bold bg-blue-600 text-white rounded-full transition shadow-sm">Asistensi</button>
+                        <button onclick="switchJadwalPane('piket')" id="pill-piket" class="flex-1 py-1.5 text-[11px] font-bold text-gray-400 hover:text-white rounded-full transition">Piket</button>
+                    </div>
+                    <div id="mob-asistensi-header" class="pb-1">
+                        <div id="shift-times-container-mob"></div>
+                        <div class="flex justify-between items-center mt-1.5">
+                            <h3 class="text-[10px] font-bold text-gray-300 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-chalkboard-user text-white"></i> Asistensi Praktikum</h3>
+                            <button id="btn-edit-jadwal-mob" onclick="toggleEditJadwal()" class="flex bg-[#2a2a2a] hover:bg-[#333] border border-[#444] text-gray-300 px-2.5 py-1 rounded-md text-[9px] font-bold items-center gap-1 transition shadow-sm focus:outline-none">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hidden md:flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-white">Jadwal Asisten</h2>
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-5 w-full items-start">
+                    
+                    <!-- PANE ASISTENSI -->
+                    <div id="pane-asistensi" class="w-full md:w-1/2 block md:h-[calc(100vh-120px)] md:overflow-y-auto custom-scrollbar md:pr-3 pb-8">
+                        <div class="hidden md:block sticky top-0 z-20 bg-[#121212] pt-0.5 pb-2.5 mb-2 border-b border-[#2a2a2a]">
+                            <div id="shift-times-container-desk"></div>
+                            <div class="flex justify-between items-center mt-2">
+                                <h3 class="text-[11px] font-bold text-gray-300 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-chalkboard-user text-white"></i> Asistensi Praktikum</h3>
+                                <button id="btn-edit-jadwal-desk" onclick="toggleEditJadwal()" class="flex bg-[#2a2a2a] hover:bg-[#333] border border-[#444] text-gray-300 px-2.5 py-1 rounded-md text-[10px] font-bold items-center gap-1 transition shadow-sm focus:outline-none">
+                                    <i class="fa-solid fa-pen-to-square"></i> Edit Jadwal
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- KONTEN JADWAL ASISTENSI -->
+                        <div id="jadwal-asistensi-container"></div>
+                        
+                        <div class="mt-4 border-t border-[#333] pt-3" id="jadwal-selesai-asistensi-wrapper" style="display: none;">
+                            <h3 class="text-[10px] font-bold text-gray-500 mb-2 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-clock-rotate-left"></i> Asistensi Selesai</h3>
+                            <div id="jadwal-selesai-asistensi-container"></div>
+                        </div>
+                    </div>
+
+                    <!-- PANE PIKET -->
+                    <div id="pane-piket" class="w-full md:w-1/2 hidden md:block md:h-[calc(100vh-120px)] md:overflow-y-auto custom-scrollbar md:pr-3 pb-8">
+                        <div class="hidden md:flex sticky top-0 z-20 bg-[#121212] pb-2 mb-2 border-b border-[#2a2a2a] items-end" style="min-height: 38px;">
+                            <h3 class="text-[11px] font-bold text-gray-300 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-broom text-white"></i> Piket Laboratorium</h3>
+                        </div>
+                        
+                        <div id="jadwal-piket-container"></div>
+                        
+                        <div class="mt-4 border-t border-[#333] pt-3" id="jadwal-selesai-piket-wrapper" style="display: none;">
+                            <h3 class="text-[10px] font-bold text-gray-500 mb-2 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-clock-rotate-left"></i> Piket Selesai</h3>
+                            <div id="jadwal-selesai-piket-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: REPOSITORI -->
+            <section id="app-tab-repo" class="tab-content w-full max-w-4xl mx-auto">
+                <h2 class="text-xl font-bold text-white mb-3">Repositori Asisten</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="repo-ast-container">
+                    <div class="surface-card p-4 flex flex-col justify-between hover:bg-[#252525] transition border border-[#2a2a2a] h-full">
+                        <div class="flex items-start gap-2.5 mb-3">
+                            <div class="w-9 h-9 bg-[#2a2a2a] text-gray-400 rounded-full flex items-center justify-center shrink-0"><i class="fa-solid fa-folder-closed text-sm"></i></div>
+                            <div><h3 class="font-bold text-gray-200 text-[13px]">File Asisten</h3><p class="text-[10px] text-gray-500 mt-0.5 leading-tight">Dokumen untuk asisten.</p></div>
+                        </div>
+                        <a id="repo-ast-link-file" href="#" target="_blank" class="w-full bg-[#1e1e1e] hover:bg-[#2a2a2a] border border-[#333] text-center py-2 rounded-lg text-xs text-gray-300 font-semibold transition">Akses Folder</a>
+                    </div>
+                    <div class="surface-card p-4 flex flex-col justify-between hover:bg-[#252525] transition border border-[#2a2a2a] h-full">
+                        <div class="flex items-start gap-2.5 mb-3">
+                            <div class="w-9 h-9 bg-[#2a2a2a] text-gray-400 rounded-full flex items-center justify-center shrink-0"><i class="fa-solid fa-database text-sm"></i></div>
+                            <div><h3 class="font-bold text-gray-200 text-[13px]">Database</h3><p class="text-[10px] text-gray-500 mt-0.5 leading-tight">Rekap nilai praktikan.</p></div>
+                        </div>
+                        <a id="repo-ast-link-db" href="#" target="_blank" class="w-full bg-[#1e1e1e] hover:bg-[#2a2a2a] border border-[#333] text-center py-2 rounded-lg text-xs text-gray-300 font-semibold transition">Buka Database</a>
+                    </div>
+                    <div class="surface-card p-4 flex flex-col justify-between hover:bg-[#252525] transition border border-[#2a2a2a] h-full">
+                        <div class="flex items-start gap-2.5 mb-3">
+                            <div class="w-9 h-9 bg-[#2a2a2a] text-gray-400 rounded-full flex items-center justify-center shrink-0"><i class="fa-solid fa-file-pdf text-sm"></i></div>
+                            <div><h3 class="font-bold text-gray-200 text-[13px]">File Praktikan</h3><p class="text-[10px] text-gray-500 mt-0.5 leading-tight">Modul & materi praktikum.</p></div>
+                        </div>
+                        <a id="repo-ast-link-prak" href="#" target="_blank" class="w-full bg-[#1e1e1e] hover:bg-[#2a2a2a] border border-[#333] text-center py-2 rounded-lg text-xs text-gray-300 font-semibold transition">Akses Berkas</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: NILAI PRAKTIKAN -->
+            <section id="app-tab-nilai" class="tab-content w-full max-w-4xl mx-auto">
+                <h2 class="text-xl font-bold text-white mb-3">Nilai Praktikan</h2>
+                <div class="surface-card p-8 flex flex-col items-center justify-center text-center border border-[#2a2a2a] min-h-[50vh]">
+                    <div class="w-14 h-14 bg-blue-900/20 text-blue-400 rounded-full flex items-center justify-center mb-3">
+                        <i class="fa-solid fa-person-digging text-2xl"></i>
+                    </div>
+                    <h3 class="text-[15px] font-bold text-white mb-1.5">Segera Hadir</h3>
+                    <p class="text-xs text-gray-400 max-w-xs mx-auto mb-5 leading-relaxed">Fitur penilaian praktikan sedang dalam tahap pengembangan. Silakan akses melalui Database.</p>
+                    <a id="btn-nilai-db" href="#" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-lg transition text-xs shadow-md flex items-center gap-2">
+                        <i class="fa-solid fa-database"></i> Buka Database
+                    </a>
+                </div>
+            </section>
+
+            <!-- TAB: PROFIL -->
+            <section id="app-tab-profil" class="tab-content w-full max-w-2xl mx-auto">
+                <h2 class="text-xl font-bold text-white mb-3">Profil Asisten</h2>
+                <div class="surface-card p-4 mb-3 text-center border border-[#2a2a2a] relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-12 bg-blue-900/20 border-b border-[#333]"></div>
+                    <div id="prof-avatar-big" class="w-16 h-16 rounded-full bg-[#121212] border-4 border-[#1e1e1e] mx-auto flex items-center justify-center text-blue-400 text-xl font-black mb-2 relative z-10 shadow-sm"></div>
+                    <h3 id="prof-namaLengkap" class="text-[15px] font-bold text-white relative z-10">--</h3>
+                    <p id="prof-jabatan" class="text-blue-400 text-[10px] mt-1 font-bold tracking-widest relative z-10 uppercase">JABATAN</p>
+                    <p id="prof-kode" class="text-gray-400 text-[9px] mt-1 font-semibold tracking-widest relative z-10 bg-[#121212] inline-block px-1.5 py-0.5 rounded border border-[#333]">KODE: [--]</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-3">
+                    <div class="surface-container p-3 border border-[#333] flex items-center gap-2.5">
+                        <div class="w-7 h-7 rounded-full bg-[#1e1e1e] flex items-center justify-center"><i class="fa-solid fa-id-badge text-gray-400 text-[10px]"></i></div>
+                        <div><p class="text-[8px] text-gray-500 font-semibold uppercase tracking-widest mb-0.5">NIM</p><p id="prof-nim-detail" class="font-bold text-[12px] text-gray-200 font-mono">--</p></div>
+                    </div>
+                    <div class="surface-container p-3 border border-[#333] flex items-center gap-2.5">
+                        <div class="w-7 h-7 rounded-full bg-[#1e1e1e] flex items-center justify-center"><i class="fa-solid fa-graduation-cap text-gray-400 text-[10px]"></i></div>
+                        <div><p class="text-[8px] text-gray-500 font-semibold uppercase tracking-widest mb-0.5">Jurusan</p><p id="prof-jurusan" class="font-bold text-[12px] text-gray-200">Teknik</p></div>
+                    </div>
+                </div>
+                <div class="surface-card p-3 space-y-2 border border-[#2a2a2a]">
+                    <h4 class="text-[10px] font-bold text-gray-300 uppercase tracking-wider mb-1 px-1 flex items-center gap-1.5"><i class="fa-solid fa-gear text-white"></i> Pengaturan Akun</h4>
+                    <details class="group cursor-pointer overflow-hidden">
+                        <summary class="flex items-center justify-between outline-none bg-[#2a2a2a] p-3 rounded-xl border border-[#333]">
+                            <div class="flex items-center gap-2"><i class="fa-solid fa-lock text-white text-[11px]"></i><span class="font-semibold text-[11px] text-gray-200">Ganti Password Akun</span></div>
+                            <i class="fa-solid fa-chevron-down text-gray-400 transition-transform group-open:rotate-180 text-[10px]"></i>
+                        </summary>
+                        <div class="mt-1.5 p-3 bg-[#2a2a2a] rounded-xl border border-[#333] flex flex-col gap-2.5">
+                            <input type="password" id="input-old-pass" placeholder="Password Lama" class="w-full bg-[#121212] border border-[#444] rounded-lg px-3 py-2 text-[11px] text-white focus:outline-none focus:border-blue-500 transition">
+                            <input type="password" id="input-new-pass" placeholder="Password Baru" class="w-full bg-[#121212] border border-[#444] rounded-lg px-3 py-2 text-[11px] text-white focus:outline-none focus:border-blue-500 transition">
+                            <button onclick="changePassword()" id="btn-change-pass" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-[11px] font-semibold transition mt-0.5">Simpan Perubahan</button>
+                        </div>
+                    </details>
+                    <button id="btn-install-pwa" class="hidden w-full bg-[#2a2a2a] hover:bg-blue-500/20 text-blue-400 border border-[#333] hover:border-blue-500/30 p-3.5 rounded-xl flex items-center justify-between gap-2 transition font-semibold text-[13px]">
+                        <div class="flex items-center gap-2.5">
+                            <i class="fa-solid fa-download text-white text-[13px]"></i>
+                            <span class="text-gray-200">Install Aplikasi</span>
+                        </div>
+                    </button>
+                    <button onclick="doLogout()" class="w-full bg-[#2a2a2a] hover:bg-red-500/20 text-red-400 border border-[#333] hover:border-red-500/30 p-3 rounded-xl flex items-center justify-center gap-1.5 transition font-semibold text-[11px]"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
+                </div>
+            </section>
+        </main>
+
+        <nav id="mobile-navbar" class="login-hide md:hidden fixed bottom-3 left-3 right-3 bg-[#1e1e1e] shadow-2xl z-50 flex justify-around items-center px-1 py-1 rounded-full border border-[#333333]">
+            <button onclick="switchAppTab('home')" class="mobile-nav-item active" data-tab="home">
+                <div class="nav-indicator"><i class="fa-solid fa-house"></i></div>
+            </button>
+            <button onclick="switchAppTab('jadwal')" class="mobile-nav-item" data-tab="jadwal">
+                <div class="nav-indicator"><i class="fa-solid fa-calendar-days"></i></div>
+            </button>
+            <button onclick="switchAppTab('repo')" class="mobile-nav-item" data-tab="repo">
+                <div class="nav-indicator"><i class="fa-solid fa-folder"></i></div>
+            </button>
+            <button onclick="switchAppTab('nilai')" class="mobile-nav-item" data-tab="nilai">
+                <div class="nav-indicator"><i class="fa-solid fa-graduation-cap"></i></div>
+            </button>
+            <button onclick="switchAppTab('profil')" class="mobile-nav-item" data-tab="profil">
+                <div class="nav-indicator"><i class="fa-solid fa-user"></i></div>
+            </button>
+        </nav>
+    </div>
+
+    <!-- MODAL HAPUS PENGUMUMAN -->
+    <div id="modal-confirm" class="hidden fixed inset-0 z-[99999] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-[#1e1e1e] border border-[#333] rounded-2xl w-full max-w-sm p-6 shadow-2xl text-center">
+            <div class="w-12 h-12 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-4"><i class="fa-solid fa-triangle-exclamation text-xl"></i></div>
+            <h3 id="confirm-title" class="text-lg font-bold text-white mb-2">Konfirmasi Hapus</h3>
+            <p id="confirm-msg" class="text-xs text-gray-400 mb-6">Yakin ingin menghapusnya?</p>
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 bg-[#2a2a2a] hover:bg-[#333] text-white py-2.5 rounded-xl text-sm font-semibold transition border border-[#444]">Batal</button>
+                <button onclick="executeDeletePengumuman()" id="btn-confirm-action" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl text-sm font-semibold transition">Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TAMBAH PENGUMUMAN -->
+    <div id="modal-pengumuman" class="hidden fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-[#1e1e1e] border border-[#333] rounded-2xl w-full max-w-md p-5 shadow-2xl relative">
+            <button onclick="closeModalPengumuman()" class="absolute top-4 right-4 text-gray-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h2 class="text-lg font-bold text-white mb-4">Buat Pengumuman</h2>
+            <form id="form-pengumuman" onsubmit="submitPengumuman(event)" class="space-y-3">
+                <div>
+                    <label class="block text-[10px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Target Pengumuman</label>
+                    <div class="relative">
+                        <select id="modal-target-pengumuman" class="w-full bg-[#121212] border border-[#444] rounded-lg p-2.5 text-xs text-white focus:border-blue-500 outline-none appearance-none pr-8"></select>
+                        <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] pointer-events-none"></i>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Judul</label>
+                    <input type="text" id="modal-judul" required placeholder="Judul Pengumuman" class="w-full bg-[#121212] border border-[#444] rounded-lg p-2.5 text-xs text-white focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Isi Pengumuman</label>
+                    <textarea id="modal-isi" required rows="4" placeholder="Tulis pengumuman di sini..." class="w-full bg-[#121212] border border-[#444] rounded-lg p-2.5 text-xs text-white focus:border-blue-500 outline-none resize-none"></textarea>
+                </div>
+                <button type="submit" id="btn-submit-pengumuman" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition text-[12px] shadow-sm mt-1">Kirim Pengumuman</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PRESENSI ASISTEN -->
+    <div id="modal-presensi-asisten" class="hidden fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-[#1e1e1e] border border-[#333] rounded-2xl w-full max-w-md p-5 shadow-2xl relative flex flex-col max-h-[90vh]">
+            <button onclick="closePresensiAsistenModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white transition z-10"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h2 class="text-[16px] font-bold text-white mb-2 shrink-0"><i class="fa-solid fa-clipboard-check text-blue-400 mr-1.5"></i> Presensi Shift</h2>
+            
+            <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 mb-3 shrink-0">
+                <p class="text-[10px] text-yellow-400 leading-tight font-medium text-center">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> Pastikan Anda adalah <b>PJ Absen</b> di shift ini.
+                </p>
+            </div>
+
+            <div class="overflow-y-auto custom-scrollbar pr-2 flex-1">
+                <form id="form-presensi-asisten" onsubmit="submitPresensiAsisten(event)" class="space-y-3 pb-1">
+                    
+                    <div>
+                        <label class="block text-[10px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Pilih Shift Hari Ini</label>
+                        <div class="relative">
+                            <select id="presensi-shift-select" required class="w-full bg-[#121212] border border-[#444] rounded-lg p-2.5 text-xs text-white focus:border-blue-500 outline-none appearance-none pr-8">
+                            </select>
+                            <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] pointer-events-none"></i>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-[#333]">
+                        <label class="block text-[10px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Tambah Asisten Hadir</label>
+                        <div class="flex gap-2">
+                            <div class="relative flex-1">
+                                <select id="presensi-add-ast-select" class="w-full bg-[#121212] border border-[#444] rounded-lg p-2.5 text-xs text-white focus:border-blue-500 outline-none appearance-none pr-8">
+                                    <option value="" disabled selected>Pilih Asisten</option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] pointer-events-none"></i>
+                            </div>
+                            <button type="button" onclick="addAsistenToPresensi()" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 rounded-lg font-bold transition shadow-sm focus:outline-none"><i class="fa-solid fa-plus text-xs"></i></button>
+                        </div>
+                    </div>
+
+                    <div id="presensi-ast-list" class="space-y-2 mt-2 empty:hidden">
+                    </div>
+
+                    <div id="dynamic-inputs-container" class="pt-2 border-t border-[#333] empty:hidden hidden">
+                    </div>
+
+                    <button type="submit" id="btn-submit-presensi-ast" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition text-[12px] shadow-sm mt-2">Kirim Data Absensi</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const sheetApiUrl = '/api/gas';
+        let globalData = { asisten: [], struktur: [], pengumuman_asisten: [], link: [], jadwal: [], jadwal_asisten_2d: [] };
+        let currentUser = null; 
+        let jadwalAsistensiList = []; let jadwalPiketList = []; let upcomingPersonalSchedules = [];
+        
+        let isEditJadwalMode = false;
+        let isEditPengumumanMode = false;
+        let allAssistantCodes = [];
+        let presensiAddedAssistants = [];
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const color = type === 'success' ? 'bg-green-600' : (type === 'error' ? 'bg-red-600' : 'bg-blue-600');
+            const icon = type === 'success' ? 'fa-check' : (type === 'error' ? 'fa-circle-exclamation' : 'fa-info-circle');
+            toast.className = `${color} text-white px-3.5 py-2.5 rounded-lg shadow-xl text-[11px] font-bold flex items-center gap-2 toast-enter`;
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(-10px)'; toast.style.transition = 'all 0.3s'; setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        const setTxt = (id, text) => { const el = document.getElementById(id); if(el) el.innerText = text; };
+        const findKey = (obj, keyword) => Object.keys(obj || {}).find(k => String(k).trim().toLowerCase().includes(keyword.toLowerCase()));
+        
+        function getJurusan(nim) {
+            if(!nim || String(nim).length < 5) return "Teknik";
+            const kodeNIM = String(nim).substring(3, 4);
+            const jurMap = { '1':'Teknik Mesin', '2':'Teknik Elektro', '3':'Teknik Industri', '4':'Teknik Metalurgi', '5':'Teknik Kimia', '6':'Teknik Sipil' };
+            let defaultJur = jurMap[kodeNIM] || "Teknik";
+            if(globalData.jadwal && globalData.jadwal.length > 0) {
+                const kKdJur = findKey(globalData.jadwal[0], 'kode jurusan'); const kJur = findKey(globalData.jadwal[0], 'jurusan');
+                if(kKdJur && kJur) { const match = globalData.jadwal.find(d => String(d[kKdJur]).trim() === kodeNIM); if(match && match[kJur]) return match[kJur]; }
+            }
+            return defaultJur;
+        }
+
+        function isFuzzyMatch(nameA, nameB) {
+            let a = String(nameA).toLowerCase().replace(/[^a-z0-9 ]/g, '').trim(); let b = String(nameB).toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+            if(a === b) return true; let pA = a.split(' ').filter(x => x.length > 2); let pB = b.split(' ').filter(x => x.length > 2);
+            for(let p of pA) { if(b.includes(p)) return true; } for(let p of pB) { if(a.includes(p)) return true; }
+            return false;
+        }
+
+        function determineRole(nama, kode) {
+            if(!globalData.struktur || globalData.struktur.length < 2) return "Asisten Laboratorium";
+            let arr = globalData.struktur; let headers = arr[0].map(h => String(h).trim()); 
+            for (let c = 0; c < headers.length; c++) {
+                let header = headers[c]; if (!header) continue; let rankCounter = 1;
+                for (let r = 1; r < arr.length; r++) {
+                    let cell = String(arr[r][c]).trim();
+                    if (!cell || cell.toLowerCase().includes('foto') || cell.toLowerCase().includes('angkatan') || cell.match(/^https?:\/\//i) || cell.match(/^20\d{2}/)) continue;
+                    let sKode = String(kode).toLowerCase().replace(/\[|\]/g, '').trim(); let cLow = cell.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+                    if (isFuzzyMatch(cell, nama) || cLow === sKode || cLow.includes(`[${sKode}]`) || cLow.includes(`(${sKode})`)) {
+                        let hLow = header.toLowerCase();
+                        if (hLow.includes('koordinator')) return "Koordinator Asisten";
+                        if (hLow.includes('sekretaris')) return rankCounter === 1 ? "Sekretaris 1" : "Sekretaris " + rankCounter;
+                        if (hLow.includes('bendahara')) return rankCounter === 1 ? "Bendahara 1" : "Bendahara " + rankCounter;
+                        if (hLow.includes('divisi') || hLow.includes('div.')) { let divName = header.replace(/divisi|div\./ig, '').trim(); return rankCounter === 1 ? "Kepala Divisi " + divName : "Anggota Divisi " + divName; }
+                        return "Asisten Laboratorium";
+                    }
+                    rankCounter++;
+                }
+            } return "Asisten Laboratorium";
+        }
+
+        function togglePasswordVisibility() {
+            const p = document.getElementById('login-pass'); const i = document.getElementById('eye-icon');
+            if(p.type === 'password') { p.type = 'text'; i.className = 'fa-solid fa-eye-slash'; } else { p.type = 'password'; i.className = 'fa-solid fa-eye'; }
+        }
+
+        function formatText(str) {
+            if(!str) return ""; 
+            let s = String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            return s.replace(/(https?:\/\/[^\s]+)|(www\.[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/gi, function(match, p1, p2) { let link = p1 || 'https://' + p2; return '<a href="' + link + '" target="_blank" class="text-blue-400 font-semibold hover:underline break-all">' + match + '</a>'; }).replace(/\n/g, "<br>");
+        }
+
+        function checkPengumumanAccess() {
+            if (!currentUser) return { asisten: false, praktikan: false }; let jab = currentUser.jabatan;
+            let canAst = ['Koordinator Asisten', 'Sekretaris 1', 'Sekretaris 2', 'Bendahara 1', 'Bendahara 2'].includes(jab) || jab.startsWith('Kepala Divisi');
+            let canPrak = jab.includes('Divisi Pengembangan'); let hasAccess = canAst || canPrak;
+            ['desk', 'mob'].forEach(type => { const btn = document.getElementById(`btn-edit-p-${type}`); if (btn) { if (hasAccess) btn.classList.remove('hidden'); else btn.classList.add('hidden'); } });
+            return { asisten: canAst, praktikan: canPrak, any: hasAccess };
+        }
+
+        function parseDateLocal(dateStr) {
+            if(!dateStr) return new Date(0); if(dateStr instanceof Date) return dateStr; if(/^\d{4}-\d{2}-\d{2}T/.test(String(dateStr))) return new Date(dateStr);
+            const p = String(dateStr).split(/[\/\-]/); return p.length >= 3 ? new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0])) : new Date(dateStr);
+        }
+
+        function formatDateFull(dateObj) {
+            if(!dateObj || isNaN(dateObj.getTime())) return "Tanggal Invalid";
+            const d = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']; const m = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+            return `${d[dateObj.getDay()]}, ${dateObj.getDate()} ${m[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+        }
+
+        function getLinkFromSheet(judulTarget) {
+            if(!globalData.link || globalData.link.length === 0) return '#';
+            const kJud = findKey(globalData.link[0], 'judul'); const kLnk = findKey(globalData.link[0], 'link');
+            if(!kJud || !kLnk) return '#';
+            const match = globalData.link.find(item => String(item[kJud]).toLowerCase().includes(judulTarget.toLowerCase()));
+            return match ? match[kLnk] : '#';
+        }
+        
+        function createPill(kodeRaw, isMe, isEditMode = false, shiftId = null) {
+            let kode = String(kodeRaw).replace(/\[|\]/g, '').toUpperCase(); let base = isMe ? "bg-blue-600 text-white border-blue-500" : "bg-[#121212] text-gray-300 border-[#444]";
+            let btn = (isEditMode && shiftId) ? `<button onclick="removeKode('${shiftId}', '${kode}')" class="ml-2 text-red-400 hover:text-red-300 focus:outline-none transition"><i class="fa-solid fa-xmark text-[10px]"></i></button>` : '';
+            return `<div class="inline-flex items-center border ${base} px-2.5 py-1 rounded-lg text-[10px] font-bold font-mono tracking-wider shadow-sm shrink-0 whitespace-nowrap">${kode}${btn}</div>`;
+        }
+
+        function extractAllCodes() {
+            if(!globalData.asisten || globalData.asisten.length === 0) return; const kKode = findKey(globalData.asisten[0], 'kode');
+            if(kKode) { let codes = globalData.asisten.map(d => String(d[kKode] || '').replace(/\[|\]/g, '').toUpperCase()).filter(k => k && k !== 'KODE'); allAssistantCodes = [...new Set(codes)].sort(); }
+        }
+
+        async function fetchAndSaveData() {
+            const response = await fetch(sheetApiUrl); globalData = await response.json(); localStorage.setItem('asisten_data', JSON.stringify(globalData)); parseStrukturData();
+        }
+        
+        async function silentFetchData() {
+            if (isEditJadwalMode || isEditPengumumanMode) return; 
+            try { const response = await fetch(sheetApiUrl); const newData = await response.json(); if (newData && newData.asisten) { globalData = newData; localStorage.setItem('asisten_data', JSON.stringify(globalData)); parseStrukturData(); renderDashboard(); } } catch (e) { console.error('Silent fetch failed', e); }
+        }
+
+        async function initApp() {
+            const sessionStr = localStorage.getItem('asisten_session'); const dataStr = localStorage.getItem('asisten_data');
+            if (sessionStr && dataStr) {
+                const session = JSON.parse(sessionStr); globalData = JSON.parse(dataStr);
+                if (processUserData(session.nim, session.pass)) { showAppView(); parseStrukturData(); renderDashboard(); setTimeout(silentFetchData, 1000); return; }
+            }
+            if (sessionStr) { showLoadingOnly(); } else { showLoginView(); return; }
+            try { await fetchAndSaveData(); const session = JSON.parse(localStorage.getItem('asisten_session')); if(processUserData(session.nim, session.pass)) { showAppView(); renderDashboard(); } else { doLogout(); } } catch (error) { console.error("Init Error:", error); if(dataStr) { showAppView(); renderDashboard(); } else showLoginView(); }
+        }
+
+        async function refreshData() {
+            const bar = document.getElementById('top-loading-bar'); bar.classList.remove('hidden');
+            try { 
+                await fetchAndSaveData(); 
+                const session = JSON.parse(localStorage.getItem('asisten_session')); 
+                processUserData(session.nim, session.pass); 
+                renderDashboard(); 
+            } catch (e) { 
+                console.error("Error di refreshData:", e);
+                showToast('Gagal memuat ulang data', 'error'); 
+            } finally { 
+                bar.classList.add('hidden'); 
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault(); const nim = document.getElementById('login-nim').value.trim(); const pass = document.getElementById('login-pass').value.trim();
+            const btn = document.getElementById('btn-login'); const err = document.getElementById('login-error'); err.classList.add('hidden'); if(!nim || !pass) return; btn.innerText = "Memverifikasi...";
+            try { await fetchAndSaveData(); } catch(error) { err.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-1 text-white"></i> Gagal koneksi.`; err.classList.remove('hidden'); btn.innerText = "Masuk"; return; }
+            if(processUserData(nim, pass)) { localStorage.setItem('asisten_session', JSON.stringify({ nim: nim, pass: pass })); showAppView(); parseStrukturData(); renderDashboard(); } else { err.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-1 text-white"></i> NIM atau password salah.`; err.classList.remove('hidden'); } btn.innerText = "Masuk";
+        }
+
+        function doLogout() { localStorage.removeItem('asisten_session'); localStorage.removeItem('asisten_data'); currentUser = null; document.getElementById('login-nim').value = ''; document.getElementById('login-pass').value = ''; showLoginView(); }
+        function showLoadingOnly() { document.getElementById('loading-view').classList.remove('login-hide'); document.getElementById('app-view').classList.add('login-hide'); document.getElementById('mobile-navbar').classList.add('login-hide'); document.getElementById('login-view').classList.add('login-hide'); }
+        function showLoginView() { document.getElementById('loading-view').classList.add('login-hide'); document.getElementById('app-view').classList.add('login-hide'); document.getElementById('mobile-navbar').classList.add('login-hide'); document.getElementById('login-view').classList.remove('login-hide'); }
+        function showAppView() { document.getElementById('loading-view').classList.add('login-hide'); document.getElementById('login-view').classList.add('login-hide'); document.getElementById('app-view').classList.remove('login-hide'); document.getElementById('mobile-navbar').classList.remove('login-hide'); }
+
+        function processUserData(nim, pass) {
+            if(!globalData.asisten || globalData.asisten.length === 0) return false;
+            const kNim = findKey(globalData.asisten[0], 'nim'); const kPass = findKey(globalData.asisten[0], 'password'); const kKode = findKey(globalData.asisten[0], 'kode'); const kNama = findKey(globalData.asisten[0], 'nama');
+            const userRow = globalData.asisten.find(d => kNim && kPass && String(d[kNim]).trim() === String(nim).trim() && String(d[kPass]).trim() === pass);
+            if(!userRow) return false;
+            let nama = userRow[kNama] || "Asisten"; let panggilan = nama.split(' ')[0]; if(nama.split(' ').length > 1 && ['muhammad','siti','m.'].includes(panggilan.toLowerCase())) panggilan = nama.split(' ')[1];
+            const p_kode = String(userRow[kKode]).trim(); currentUser = { nim: nim, namaLengkap: nama, namaPanggilan: panggilan, kode: p_kode, jurusan: getJurusan(nim), jabatan: determineRole(nama, p_kode) }; return true;
+        }
+
+        function parseStrukturData() {
+            jadwalAsistensiList = []; jadwalPiketList = []; upcomingPersonalSchedules = []; const arr2d = globalData.jadwal_asisten_2d; if(!arr2d || arr2d.length === 0) return; extractAllCodes();
+            let colAst = -1; let colPik = -1; let piketMap = { 'Senin':[], 'Selasa':[], 'Rabu':[], 'Kamis':[], "Jum'at":[], 'Sabtu':[] }; let piketDaysCols = {};
+            for(let r=0; r<Math.min(10, arr2d.length); r++) { for(let c=0; c<arr2d[r].length; c++) { let cell = String(arr2d[r][c]).trim().toUpperCase(); if(cell.includes('JADWAL ASISTENSI') || cell === 'ASISTENSI') colAst = c; if(cell.includes('JADWAL PIKET') || cell === 'PIKET') colPik = c; } }
+
+            if(colAst !== -1) {
+                let currentPutaran = 1; let currentTanggalStr = ""; let currentTanggalObj = null;
+                for(let r=0; r<arr2d.length; r++) {
+                    let rawVal = String(arr2d[r][colAst] || "").trim(); let cellVal = rawVal.toUpperCase();
+                    if(cellVal.startsWith('PUTARAN')) { currentPutaran = parseInt(cellVal.replace(/\D/g, '')) || currentPutaran; continue; } 
+                    
+                    let isNewDate = false;
+                    if (rawVal.includes('T') && !isNaN(Date.parse(rawVal))) {
+                        let dt = new Date(rawVal); if(!isNaN(dt.getTime())) { currentTanggalObj = dt; currentTanggalStr = ("0"+dt.getDate()).slice(-2)+"/"+("0"+(dt.getMonth()+1)).slice(-2)+"/"+dt.getFullYear(); isNewDate = true; }
+                    } else if(cellVal.match(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/)) {
+                        let parts = cellVal.split(/[\/\-]/);
+                        if(parts.length >= 3) {
+                            let day = parseInt(parts[0], 10); let month = parseInt(parts[1], 10) - 1; let year = parseInt(parts[2], 10); if(year < 100) year += 2000;
+                            currentTanggalObj = new Date(year, month, day); currentTanggalStr = ("0"+day).slice(-2)+"/"+("0"+(month+1)).slice(-2)+"/"+year; isNewDate = true;
+                        }
+                    }
+
+                    if(currentTanggalStr && (isNewDate || cellVal === "")) {
+                        if (isNewDate) { for(let shift=1; shift<=4; shift++) { let exist = jadwalAsistensiList.find(x => x.tanggal === currentTanggalStr && x.shift === shift && x.putaran === currentPutaran); if (!exist) jadwalAsistensiList.push({ putaran: currentPutaran, tanggal: currentTanggalStr, dateObj: currentTanggalObj, shift: shift, asisten: [] }); } }
+                        for(let shift=1; shift<=4; shift++) { let kodeStr = String(arr2d[r][colAst+shift]||"").trim(); if(kodeStr && !kodeStr.toUpperCase().includes(`SHIFT`)) { let cleanKode = kodeStr.replace(/\[|\]/g, '').toUpperCase(); let exist = jadwalAsistensiList.find(x => x.tanggal === currentTanggalStr && x.shift === shift && x.putaran === currentPutaran); if(exist && !exist.asisten.includes(cleanKode)) exist.asisten.push(cleanKode); } }
+                    }
+                }
+            }
+
+            if(colPik !== -1) {
+                let dayRow = -1; for(let r=0; r<arr2d.length; r++) { if(String(arr2d[r][colPik]).trim().toUpperCase() === 'SENIN') { dayRow = r; break; } }
+                if(dayRow !== -1) {
+                    for(let c=colPik; c<=colPik+5; c++) { let day = String(arr2d[dayRow][c]).trim(); day = day.charAt(0).toUpperCase() + day.slice(1).toLowerCase(); if(day === "Jum'at" || day === "Jumat") day = "Jum'at"; piketDaysCols[c] = day; }
+                    for(let r=dayRow+1; r<arr2d.length; r++) { for(let c=colPik; c<=colPik+5; c++) { let kode = String(arr2d[r][c]).trim(); if(kode && kode.toUpperCase() !== 'TANGGAL' && !kode.toUpperCase().startsWith('PUTARAN')) { let day = piketDaysCols[c]; if(day && piketMap[day] && !piketMap[day].includes(kode)) { piketMap[day].push(kode); } } } }
+                }
+            }
+            jadwalPiketList = piketMap; buildUpcomingPersonalSchedules();
+        }
+
+        function buildUpcomingPersonalSchedules() {
+            if(!currentUser) return; upcomingPersonalSchedules = []; const now = new Date(); const nowTime = now.getTime(); let myPutarans = new Set(); const myCodeClean = currentUser.kode.replace(/\[|\]/g, '').toUpperCase();
+            jadwalAsistensiList.forEach(sch => { if(sch.asisten.includes(myCodeClean) && sch.dateObj && !isNaN(sch.dateObj.getTime())) { myPutarans.add(sch.putaran); let isPast = nowTime > sch.dateObj.getTime() + (23.9 * 60 * 60 * 1000); upcomingPersonalSchedules.push({ type: 'jaga', data: sch, dateObj: sch.dateObj, time: sch.dateObj.getTime(), isPast: isPast }); } });
+
+            let hariPiketKu = null; Object.keys(jadwalPiketList).forEach(hari => { if(jadwalPiketList[hari].map(k => k.replace(/\[|\]/g, '').toUpperCase()).includes(myCodeClean)) hariPiketKu = hari; });
+            if (hariPiketKu) {
+                const dayMap = { 'Senin':1, 'Selasa':2, 'Rabu':3, 'Kamis':4, "Jum'at":5, 'Sabtu':6, 'Minggu':7 }; let targetDayNum = dayMap[hariPiketKu];
+                myPutarans.forEach(putaran => {
+                    let schInPutaran = jadwalAsistensiList.filter(x => x.putaran === putaran && x.dateObj && !isNaN(x.dateObj.getTime()));
+                    if(schInPutaran.length > 0) {
+                        let baseDate = new Date(schInPutaran[0].dateObj.getTime()); let currentDayNum = baseDate.getDay(); if (currentDayNum === 0) currentDayNum = 7;
+                        let diff = targetDayNum - currentDayNum; let piketDate = new Date(baseDate.getTime()); piketDate.setDate(piketDate.getDate() + diff); 
+                        let isWCDay = ((putaran - 1) % 6) === (targetDayNum - 1); let taskStr = isWCDay ? "Membersihkan WC" : ""; let rekanPiket = jadwalPiketList[hariPiketKu].map(k => k.replace(/\[|\]/g, '').toUpperCase()).filter(k => k !== myCodeClean);
+                        if (!isNaN(piketDate.getTime())) { let isPast = nowTime > piketDate.getTime() + (23.9 * 60 * 60 * 1000); upcomingPersonalSchedules.push({ type: 'piket', hari: hariPiketKu, dateObj: piketDate, task: taskStr, rekan: rekanPiket, putaran: putaran, time: piketDate.getTime(), isPast: isPast }); }
+                    }
+                });
+            }
+            upcomingPersonalSchedules.sort((a,b) => a.time - b.time);
+        }
+
+        // ====== FUNGSI RENDER JAM SHIFT ======
+        function renderShiftTimes() {
+            const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+            const todayName = days[new Date().getDay()];
+            let shiftTimes = { 1: '-', 2: '-', 3: '-', 4: '-' };
+
+            if(globalData.jadwal && globalData.jadwal.length > 0) {
+                const kHari = findKey(globalData.jadwal[0], 'hari');
+                const kS1 = findKey(globalData.jadwal[0], 's1'); const kS2 = findKey(globalData.jadwal[0], 's2');
+                const kS3 = findKey(globalData.jadwal[0], 's3'); const kS4 = findKey(globalData.jadwal[0], 's4');
+
+                if(kHari && kS1) {
+                    const row = globalData.jadwal.find(r => String(r[kHari]).trim().toLowerCase() === todayName.toLowerCase() || (todayName==='Jumat' && String(r[kHari]).trim().toLowerCase().includes('jum')));
+                    if (row) {
+                        shiftTimes[1] = row[kS1] || '-'; shiftTimes[2] = row[kS2] || '-';
+                        shiftTimes[3] = row[kS3] || '-'; shiftTimes[4] = row[kS4] || '-';
+                    }
+                }
+            }
+
+            let htmlContent = '';
+            if(todayName === 'Minggu' || (shiftTimes[1]==='-' && shiftTimes[2]==='-')) {
+                htmlContent = `<div class="bg-[#1a1a1a] border border-[#333] rounded-xl p-3 mb-2 text-center"><p class="text-[11px] text-gray-500 font-semibold uppercase tracking-wider">Tidak ada shift praktikum hari ini.</p></div>`;
+            } else {
+                htmlContent = `
+                    <div class="bg-[#1a1a1a] border border-[#333] rounded-xl p-2.5 mb-2">
+                        <h3 class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-center">Jam Shift Hari ${todayName}</h3>
+                        <div class="grid grid-cols-4 gap-2">
+                            <div class="text-center bg-[#121212] border border-[#444] rounded-lg py-1.5"><p class="text-[9px] text-gray-500 mb-0.5">Shift 1</p><p class="text-[10px] font-bold text-gray-200">${shiftTimes[1]}</p></div>
+                            <div class="text-center bg-[#121212] border border-[#444] rounded-lg py-1.5"><p class="text-[9px] text-gray-500 mb-0.5">Shift 2</p><p class="text-[10px] font-bold text-gray-200">${shiftTimes[2]}</p></div>
+                            <div class="text-center bg-[#121212] border border-[#444] rounded-lg py-1.5"><p class="text-[9px] text-gray-500 mb-0.5">Shift 3</p><p class="text-[10px] font-bold text-gray-200">${shiftTimes[3]}</p></div>
+                            <div class="text-center bg-[#121212] border border-[#444] rounded-lg py-1.5"><p class="text-[9px] text-gray-500 mb-0.5">Shift 4</p><p class="text-[10px] font-bold text-gray-200">${shiftTimes[4]}</p></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const cMob = document.getElementById('shift-times-container-mob');
+            const cDesk = document.getElementById('shift-times-container-desk');
+            if (cMob) cMob.innerHTML = htmlContent;
+            if (cDesk) cDesk.innerHTML = htmlContent;
+        }
+
+        function toggleEditPengumuman() {
+            isEditPengumumanMode = !isEditPengumumanMode;
+            ['desk', 'mob'].forEach(type => {
+                const btn = document.getElementById(`btn-edit-p-${type}`);
+                if (btn) {
+                    if (isEditPengumumanMode) { btn.innerHTML = `<i class="fa-solid fa-check"></i> Selesai`; btn.className = "bg-green-600 hover:bg-green-700 border border-green-500 text-white px-2.5 py-1 rounded-md text-[9px] font-bold flex items-center gap-1 transition shadow-sm focus:outline-none"; } 
+                    else { btn.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Edit`; btn.className = "bg-[#2a2a2a] hover:bg-[#333] border border-[#444] text-gray-300 px-2.5 py-1 rounded-md text-[9px] font-bold flex items-center gap-1 transition shadow-sm focus:outline-none"; }
+                }
+            }); renderDashboard(); 
+        }
+
+        let pendingDeleteTarget = null; let pendingDeleteJudul = null;
+        function hapusPengumumanLokal(target, judul) { pendingDeleteTarget = target; pendingDeleteJudul = judul; document.getElementById('confirm-msg').innerHTML = `Yakin ingin menghapus pengumuman <br/><b class="text-white mt-1 block px-2 line-clamp-custom break-words">${judul}</b>?`; document.getElementById('modal-confirm').classList.remove('hidden'); }
+        function closeConfirmModal() { document.getElementById('modal-confirm').classList.add('hidden'); pendingDeleteTarget = null; pendingDeleteJudul = null; }
+
+        async function executeDeletePengumuman() {
+            if(!pendingDeleteTarget || !pendingDeleteJudul) return; const btn = document.getElementById('btn-confirm-action'); btn.innerText = 'Menghapus...'; btn.disabled = true;
+            try { let res = await fetch(`${sheetApiUrl}?action=delete_pengumuman&target=${pendingDeleteTarget}&judul=${encodeURIComponent(pendingDeleteJudul)}`); let json = await res.json(); if(json.success) { showToast('Pengumuman dihapus!', 'success'); refreshData(); } else throw new Error(json.error); } catch(err) { console.error(err); showToast('Gagal menghapus pengumuman', 'error'); } 
+            finally { btn.innerText = 'Hapus'; btn.disabled = false; closeConfirmModal(); }
+        }
+
+        function toggleEditJadwal() {
+            isEditJadwalMode = !isEditJadwalMode; 
+            
+            ['desk', 'mob'].forEach(type => {
+                const btn = document.getElementById(`btn-edit-jadwal-${type}`);
+                if(btn) {
+                    if(isEditJadwalMode) {
+                        btn.innerHTML = `<i class="fa-solid fa-check"></i> <span class="hidden md:inline">Selesai Edit</span><span class="md:hidden">Selesai</span>`;
+                        btn.className = "flex bg-green-600 hover:bg-green-700 border border-green-500 text-white px-2.5 py-1 rounded-md text-[10px] font-bold items-center gap-1 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400";
+                    } else {
+                        btn.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> <span class="hidden md:inline">Edit Jadwal</span><span class="md:hidden">Edit</span>`;
+                        btn.className = "flex bg-[#2a2a2a] hover:bg-[#333] border border-[#444] text-gray-300 px-2.5 py-1 rounded-md text-[10px] font-bold items-center gap-1 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+                    }
+                }
+            });
+
+            if(isEditJadwalMode) showToast("Edit Jadwal Aktif", 'info');
+            else { showToast("Selesai Edit", 'success'); refreshData(); return; }
+            renderJadwal();
+        }
+
+        async function removeKode(shiftIdRaw, kodeRaw) {
+            let kode = String(kodeRaw).replace(/\[|\]/g, '').toUpperCase(); let [putaran, tanggal, shift] = shiftIdRaw.split('|'); let sch = jadwalAsistensiList.find(s => s.putaran == putaran && s.tanggal === tanggal && s.shift == shift);
+            if (sch) {
+                sch.asisten = sch.asisten.filter(k => k !== kode); buildUpcomingPersonalSchedules(); renderJadwal(); renderDashboard(); showToast(`Menghapus ${kode}...`, 'info');
+                try { let res = await fetch(`${sheetApiUrl}?action=update_jadwal&op=remove&putaran=${putaran}&tanggal=${encodeURIComponent(tanggal)}&shift=${shift}&kode=${encodeURIComponent(kode)}`); let json = await res.json(); if(json.success) showToast(`${kode} terhapus!`, 'success'); else throw new Error('Gagal'); } catch(e) { console.error(e); sch.asisten.push(kode); buildUpcomingPersonalSchedules(); renderJadwal(); renderDashboard(); showToast('Gagal hapus!', 'error'); }
+            }
+        }
+
+        async function addKode(shiftIdSafe, shiftIdRaw) {
+            let select = document.getElementById(`select-${shiftIdSafe}`); let kode = select.value; if (!kode) return;
+            let [putaran, tanggal, shift] = shiftIdRaw.split('|'); let sch = jadwalAsistensiList.find(s => s.putaran == putaran && s.tanggal === tanggal && s.shift == shift);
+            if (sch) {
+                if (sch.asisten.length >= 6) { showToast('Maksimal 6 asisten dalam 1 shift!', 'error'); return; } if (sch.asisten.includes(kode)) { showToast('Asisten sudah ada di shift ini!', 'error'); return; }
+                sch.asisten.push(kode); buildUpcomingPersonalSchedules(); renderJadwal(); renderDashboard(); showToast(`Menyimpan ${kode}...`, 'info');
+                try { let res = await fetch(`${sheetApiUrl}?action=update_jadwal&op=add&putaran=${putaran}&tanggal=${encodeURIComponent(tanggal)}&shift=${shift}&kode=${encodeURIComponent(kode)}`); let json = await res.json(); if(json.success) showToast(`${kode} tersimpan.`, 'success'); else throw new Error('Gagal'); } catch(e) { console.error(e); sch.asisten = sch.asisten.filter(k => k !== kode); buildUpcomingPersonalSchedules(); renderJadwal(); renderDashboard(); showToast('Gagal simpan.', 'error'); }
+            }
+        }
+
+        function switchAppTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active')); document.getElementById('app-tab-' + tabId).classList.add('active');
+            document.querySelectorAll('.app-nav-item').forEach(el => el.classList.remove('active')); document.querySelectorAll(`.app-nav-item[data-tab="${tabId}"]`).forEach(el => el.classList.add('active'));
+            document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active')); document.querySelectorAll(`.mobile-nav-item[data-tab="${tabId}"]`).forEach(el => el.classList.add('active'));
+            window.scrollTo({ top: 0, behavior: 'smooth' }); if(window.innerWidth >= 768) { document.getElementById('pane-asistensi').style.display = ''; document.getElementById('pane-piket').style.display = ''; }
+        }
+        
+        function switchJadwalPane(pane) {
+            if (window.innerWidth >= 768) return; 
+            const pAst = document.getElementById('pane-asistensi'); const pPik = document.getElementById('pane-piket'); 
+            const btnAst = document.getElementById('pill-asistensi'); const btnPik = document.getElementById('pill-piket');
+            const mobHeader = document.getElementById('mob-asistensi-header');
+
+            if(pane === 'asistensi') { 
+                pAst.style.display = 'block'; pPik.style.display = 'none'; 
+                btnAst.className = "flex-1 py-1.5 text-[11px] font-bold bg-blue-600 text-white rounded-full transition shadow-sm"; 
+                btnPik.className = "flex-1 py-1.5 text-[11px] font-bold text-gray-400 hover:text-white rounded-full transition"; 
+                if(mobHeader) mobHeader.style.display = 'block';
+            } else { 
+                pAst.style.display = 'none'; pPik.style.display = 'block'; 
+                btnPik.className = "flex-1 py-1.5 text-[11px] font-bold bg-[#2a2a2a] text-white rounded-full transition shadow-sm border border-[#444]"; 
+                btnAst.className = "flex-1 py-1.5 text-[11px] font-bold text-gray-400 hover:text-white rounded-full transition"; 
+                if(mobHeader) mobHeader.style.display = 'none';
+            }
+        }
+
+        window.addEventListener('resize', () => { if(window.innerWidth >= 768) { document.getElementById('pane-asistensi').style.display = ''; document.getElementById('pane-piket').style.display = ''; } });
+
+        function buildAsistensiHTML(schedules, isOpen) {
+            if(schedules.length === 0) return `<p class="text-xs text-gray-500 py-2 italic opacity-60">- Kosong -</p>`;
+            let groupedByPutaran = {}; schedules.forEach(sch => { let p = sch.data.putaran; if(!groupedByPutaran[p]) groupedByPutaran[p] = {}; let tgl = sch.data.tanggal; if(!groupedByPutaran[p][tgl]) groupedByPutaran[p][tgl] = []; groupedByPutaran[p][tgl].push(sch); });
+            let html = ''; let myCode = currentUser.kode.replace(/\[|\]/g, '').toUpperCase();
+            
+            let putaranKeys = Object.keys(groupedByPutaran).map(Number).sort((a,b) => a - b);
+            let activePutaran = putaranKeys[0]; 
+
+            putaranKeys.forEach(putaran => { 
+                let shouldOpenPutaran = (isOpen && putaran === activePutaran) || isEditJadwalMode;
+                
+                html += `
+                <details class="group/putaran mb-4 outline-none" ${shouldOpenPutaran ? 'open' : ''}>
+                    <summary class="text-[12px] font-bold text-white mb-2 flex items-center justify-between cursor-pointer outline-none bg-[#1a1a1a] border border-[#333] p-3 rounded-xl hover:bg-[#252525] transition shadow-sm">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] shadow-sm">P${putaran}</span> Putaran ${putaran}
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-gray-500 text-[10px] transition-transform group-open/putaran:rotate-180"></i>
+                    </summary>
+                    <div class="space-y-3 pt-1">`;
+                
+                let dates = groupedByPutaran[putaran];
+                Object.keys(dates).sort((a,b) => parseDateLocal(a) - parseDateLocal(b)).forEach(tgl => {
+                    let shifts = dates[tgl]; let dateObj = shifts[0].data.dateObj; let dayStr = formatDateFull(dateObj);
+                    
+                    html += `<div class="bg-[#1e1e1e] border border-[#333] rounded-xl p-3 shadow-sm opacity-${isOpen ? '100' : '60'}">
+                                <h4 class="text-[12px] font-bold text-white mb-2 flex items-center gap-2"><i class="fa-regular fa-calendar text-gray-400"></i> ${dayStr}</h4>`;
+                    
+                    let visibleShifts = isEditJadwalMode ? shifts : shifts.filter(sch => sch.data.asisten.includes(myCode));
+                    let shiftPills = visibleShifts.sort((a,b) => a.data.shift - b.data.shift).map(sch => 
+                        `<span class="bg-[#121212] border border-[#444] text-white text-[10px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-wider shadow-sm pointer-events-none">SHIFT ${sch.data.shift}</span>`
+                    ).join('');
+                    
+                    if(!shiftPills && !isEditJadwalMode) shiftPills = '<span class="text-[10px] text-gray-500 italic">Bukan shift Anda</span>';
+
+                    html += `<details class="group/shift outline-none shift-details" ${isEditJadwalMode ? 'open' : ''}>
+                                <summary class="flex items-center justify-between cursor-pointer outline-none select-none rounded-lg p-2 -mx-2 hover:bg-[#252525] transition">
+                                    <div class="flex flex-wrap gap-2 pointer-events-none">${shiftPills}</div>
+                                    <i class="fa-solid fa-chevron-down text-gray-500 text-xs transition-transform group-open/shift:rotate-180 ml-2"></i>
+                                </summary>
+                                <div class="mt-1 pt-2 border-t border-[#333] space-y-2">`;
+
+                    visibleShifts.sort((a,b) => a.data.shift - b.data.shift).forEach(sch => {
+                        let shiftIdRaw = `${sch.data.putaran}|${sch.data.tanggal}|${sch.data.shift}`; let shiftIdSafe = shiftIdRaw.replace(/[\/\|]/g, '-');
+                        let rekanHtml = sch.data.asisten.map(k => createPill(k, k === myCode, isOpen && isEditJadwalMode, shiftIdRaw)).join('');
+                        let addHtml = '';
+                        if (isOpen && isEditJadwalMode) {
+                            let options = `<option value="" disabled selected>Pilih Asisten</option>` + allAssistantCodes.map(c => `<option value="${c}">${c}</option>`).join('');
+                            addHtml = `<div class="mt-2 flex items-center gap-2"><div class="relative flex-1"><select id="select-${shiftIdSafe}" class="w-full bg-[#121212] border border-[#444] text-gray-300 text-[11px] rounded-lg px-2.5 py-1.5 outline-none font-mono focus:border-blue-500 transition appearance-none pr-8">${options}</select><i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] pointer-events-none"></i></div><button onclick="addKode('${shiftIdSafe}', '${shiftIdRaw}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold transition shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400">Tambah</button></div>`;
+                        }
+                        
+                        // Menambahkan teks Rekan Shift
+                        html += `<div class="flex flex-col mb-1">
+                                    <span class="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-1.5">Rekan Shift ${sch.data.shift}</span>
+                                    <div class="flex flex-wrap gap-1.5 items-center">${rekanHtml || '<span class="text-[10px] text-gray-500 italic">Kosong</span>'}</div>
+                                    ${addHtml}
+                                </div>`;
+                    }); 
+                    html += `</div></details></div>`;
+                }); 
+                html += `</div></details>`;
+            }); return html;
+        }
+
+        function buildPiketHTML(schedules, isOpen) {
+            if(schedules.length === 0) return `<p class="text-xs text-gray-500 py-2 italic opacity-60">- Kosong -</p>`;
+            let groupedByPutaran = {}; schedules.forEach(sch => { let p = sch.putaran; if(!groupedByPutaran[p]) groupedByPutaran[p] = []; groupedByPutaran[p].push(sch); });
+            let html = ''; let myCode = currentUser.kode.replace(/\[|\]/g, '').toUpperCase();
+            
+            let putaranKeys = Object.keys(groupedByPutaran).map(Number).sort((a,b) => a - b);
+            let activePutaran = putaranKeys[0];
+
+            putaranKeys.forEach(putaran => {
+                let sArr = groupedByPutaran[putaran];
+                let shouldOpenPutaran = (isOpen && putaran === activePutaran) || isEditJadwalMode;
+
+                html += `
+                <details class="group/putaran mb-4 outline-none" ${shouldOpenPutaran ? 'open' : ''}>
+                    <summary class="text-[12px] font-bold text-white mb-2 flex items-center justify-between cursor-pointer outline-none bg-[#1a1a1a] border border-[#333] p-3 rounded-xl hover:bg-[#252525] transition shadow-sm">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-[#2a2a2a] text-gray-300 border border-[#444] px-2 py-0.5 rounded text-[10px] shadow-sm">P${putaran}</span> Putaran ${putaran}
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-gray-500 text-[10px] transition-transform group-open/putaran:rotate-180"></i>
+                    </summary>
+                    <div class="space-y-3 pt-1">`;
+                
+                sArr.sort((a,b) => a.time - b.time).forEach(p => {
+                    let taskBox = ''; if (p.task) { taskBox = `<div class="bg-blue-900/10 border border-blue-900/40 p-2.5 rounded-lg mb-3 flex items-center gap-2"><i class="fa-solid fa-pump-soap text-blue-400 text-xs"></i><p class="text-[11px] text-blue-300 font-bold">${p.task}</p></div>`; }
+                    let allPiketAsisten = isEditJadwalMode ? (jadwalPiketList[p.hari] || []) : [myCode, ...p.rekan]; allPiketAsisten = [...new Set(allPiketAsisten.map(k => k.replace(/\[|\]/g, '').toUpperCase()))];
+                    let rekanHtml = allPiketAsisten.length > 0 ? allPiketAsisten.map(k => createPill(k, k === myCode)).join('') : '<span class="text-[10px] text-gray-500 font-mono italic">Kosong</span>';
+                    
+                    html += `
+                    <div class="bg-[#1e1e1e] border border-[#333] rounded-xl p-3 shadow-sm opacity-${isOpen ? '100' : '60'}">
+                        <h4 class="text-[12px] font-bold text-white mb-2 flex items-center gap-2"><i class="fa-regular fa-calendar text-gray-400"></i> ${formatDateFull(p.dateObj)}</h4>
+                        <details class="group/shift outline-none shift-details" ${isEditJadwalMode ? 'open' : ''}>
+                            <summary class="flex items-center justify-between cursor-pointer outline-none select-none rounded-lg p-2 -mx-2 hover:bg-[#252525] transition">
+                                <div class="flex items-center gap-2.5 pointer-events-none">
+                                    <span class="bg-[#121212] border border-[#444] text-white text-[10px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-wider shadow-sm flex items-center gap-1.5"><i class="fa-solid fa-broom text-blue-400"></i> HARI ${p.hari}</span>
+                                </div>
+                                <i class="fa-solid fa-chevron-down text-gray-500 text-xs transition-transform group-open/shift:rotate-180 ml-2"></i>
+                            </summary>
+                            <div class="mt-1 pt-3 border-t border-[#333] space-y-2">
+                                ${taskBox}
+                                <div class="flex flex-col">
+                                    <span class="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-1.5">Asisten Piket</span>
+                                    <div class="flex flex-wrap gap-1.5 items-center">${rekanHtml}</div>
+                                </div>
+                            </div>
+                        </details>
+                    </div>`;
+                }); 
+                html += `</div></details>`;
+            }); return html;
+        }
+
+        function renderJadwal() {
+            renderShiftTimes();
+
+            const cAst = document.getElementById('jadwal-asistensi-container'); const cAstSelesai = document.getElementById('jadwal-selesai-asistensi-container'); const wAstSelesai = document.getElementById('jadwal-selesai-asistensi-wrapper');
+            const cPik = document.getElementById('jadwal-piket-container'); const cPikSelesai = document.getElementById('jadwal-selesai-piket-container'); const wPikSelesai = document.getElementById('jadwal-selesai-piket-wrapper');
+            let astAktif = [];
+            if (isEditJadwalMode) {
+                const nowTime = new Date().getTime(); let futureAll = jadwalAsistensiList.filter(sch => sch.dateObj && (sch.dateObj.getTime() + 86400000 > nowTime));
+                astAktif = futureAll.map(sch => ({ type: 'jaga', data: sch, time: sch.dateObj.getTime(), isPast: false })); astAktif.sort((a,b) => a.time - b.time); wAstSelesai.style.display = 'none';
+            } else {
+                astAktif = upcomingPersonalSchedules.filter(s => s.type === 'jaga' && !s.isPast); let astSelesai = upcomingPersonalSchedules.filter(s => s.type === 'jaga' && s.isPast);
+                if(astSelesai.length > 0) { cAstSelesai.innerHTML = buildAsistensiHTML(astSelesai, false); wAstSelesai.style.display = 'block'; } else { wAstSelesai.style.display = 'none'; }
+            }
+            cAst.innerHTML = buildAsistensiHTML(astAktif, true);
+
+            let pikAktif = upcomingPersonalSchedules.filter(s => s.type === 'piket' && !s.isPast); let pikSelesai = upcomingPersonalSchedules.filter(s => s.type === 'piket' && s.isPast);
+            cPik.innerHTML = buildPiketHTML(pikAktif, true);
+            if(pikSelesai.length > 0) { cPikSelesai.innerHTML = buildPiketHTML(pikSelesai, false); wPikSelesai.style.display = 'block'; } else { wPikSelesai.style.display = 'none'; }
+        }
+
+        function renderRepositori() {
+            const lnkAst = getLinkFromSheet('File Asisten');
+            const lnkDb = getLinkFromSheet('Database');
+            const lnkPrak = getLinkFromSheet('File') !== '#' ? getLinkFromSheet('File') : getLinkFromSheet('Materi'); 
+            
+            const elAst = document.getElementById('repo-ast-link-file');
+            if(elAst) elAst.href = lnkAst !== '#' ? lnkAst : '#';
+            
+            const elDb = document.getElementById('repo-ast-link-db');
+            if(elDb) elDb.href = lnkDb !== '#' ? lnkDb : '#';
+            const btnNilaiDb = document.getElementById('btn-nilai-db');
+            if(btnNilaiDb) btnNilaiDb.href = lnkDb !== '#' ? lnkDb : '#';
+            
+            const elPrak = document.getElementById('repo-ast-link-prak');
+            if(elPrak) elPrak.href = lnkPrak !== '#' ? lnkPrak : '#';
+        }
+
+        function renderDashboard() {
+            setTxt('home-greeting-name', currentUser.namaPanggilan); setTxt('sidebar-avatar', currentUser.kode); setTxt('prof-avatar-big', currentUser.kode);
+            setTxt('prof-namaLengkap', currentUser.namaLengkap); setTxt('prof-kode', `KODE: [${currentUser.kode}]`); setTxt('prof-nim-detail', currentUser.nim); setTxt('prof-jurusan', currentUser.jurusan); setTxt('prof-jabatan', currentUser.jabatan);
+
+            const renderPengumuman = (contId) => {
+                const pCont = document.getElementById(contId); if(!pCont) return; pCont.innerHTML = '';
+                const access = checkPengumumanAccess(); let validPengumuman = [];
+                
+                if(globalData.pengumuman_asisten && globalData.pengumuman_asisten.length > 0) {
+                   const kJudul = findKey(globalData.pengumuman_asisten[0], 'judul'); const kTgl = findKey(globalData.pengumuman_asisten[0], 'tanggal'); const kIsi = findKey(globalData.pengumuman_asisten[0], 'isi');
+                   if(kJudul && kTgl && kIsi) { globalData.pengumuman_asisten.forEach(p => { if(p[kJudul] && String(p[kJudul]).trim() !== '') { validPengumuman.push({ target: 'asisten', judul: p[kJudul], tgl: p[kTgl], isi: p[kIsi], tglObj: parseDateLocal(p[kTgl]) }); } }); }
+                }
+
+                if(globalData.pengumuman && globalData.pengumuman.length > 0) {
+                    const kJudul = findKey(globalData.pengumuman[0], 'judul'); const kTgl = findKey(globalData.pengumuman[0], 'tanggal'); const kIsi = findKey(globalData.pengumuman[0], 'isi');
+                    if(kJudul && kTgl && kIsi) { globalData.pengumuman.forEach(p => { if(p[kJudul] && String(p[kJudul]).trim() !== '') { validPengumuman.push({ target: 'praktikan', judul: p[kJudul], tgl: p[kTgl], isi: p[kIsi], tglObj: parseDateLocal(p[kTgl]) }); } }); }
+                }
+
+                validPengumuman.sort((a, b) => b.tglObj - a.tglObj);
+
+                if (isEditPengumumanMode && (access.asisten || access.praktikan)) {
+                    const addClass = contId === 'dash-pengumuman-mobile' ? 'surface-container p-3.5 flex-shrink-0 min-w-[260px] w-[85%] snap-center border border-blue-500/50 bg-blue-900/10 border-dashed flex flex-col items-center justify-center cursor-pointer hover:bg-blue-900/20 transition min-h-[110px]' : 'surface-container p-3.5 mb-3 border border-blue-500/50 bg-blue-900/10 border-dashed flex flex-col items-center justify-center cursor-pointer hover:bg-blue-900/20 transition min-h-[90px]';
+                    pCont.innerHTML += `<div onclick="openModalPengumuman()" class="${addClass}"><i class="fa-solid fa-plus-circle text-blue-400 text-2xl mb-1.5"></i><span class="text-blue-400 text-[10px] font-bold uppercase tracking-wider mt-1">Tambah Pengumuman</span></div>`;
+                }
+
+                if(validPengumuman.length > 0) {
+                    const isSingle = (validPengumuman.length === 1 && !isEditPengumumanMode);
+                    validPengumuman.forEach((p, idx) => {
+                        const txt = formatText(String(p.isi)); const isLong = String(p.isi).length > 200; const uid = `${contId}-${idx}`;
+                        const cClass = contId === 'dash-pengumuman-mobile' ? `surface-container ${isSingle ? 'w-full' : 'min-w-[260px] w-[85%] snap-center'} p-3.5 flex-shrink-0 border border-[#333] relative` : 'surface-container p-3.5 mb-3 border border-[#333] relative';
+                        let canDelete = isEditPengumumanMode && ((p.target === 'asisten' && access.asisten) || (p.target === 'praktikan' && access.praktikan));
+                        let deleteBtn = canDelete ? `<button onclick="hapusPengumumanLokal('${p.target}', '${String(p.judul).replace(/'/g, "\\'")}')" class="absolute top-2 right-2 w-6 h-6 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-lg transition z-10" title="Hapus"><i class="fa-solid fa-xmark text-[11px]"></i></button>` : '';
+                        let targetBadge = p.target === 'praktikan' ? `<span class="inline-block bg-[#121212] border border-emerald-500/60 text-gray-300 px-2 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider shadow-sm">Praktikan</span>` : `<span class="inline-block bg-[#121212] border border-blue-500/60 text-gray-300 px-2 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider shadow-sm">Asisten</span>`;
+
+                        pCont.innerHTML += `
+                            <div class="${cClass}">
+                                ${deleteBtn}
+                                <div class="flex items-center gap-2 mb-2 pr-8"><span class="inline-block bg-[#121212] border border-[#444] text-gray-300 px-2 py-1 rounded-full text-[9px] font-bold flex items-center gap-1.5 shadow-sm"><i class="fa-solid fa-clock"></i> ${p.tgl}</span>${targetBadge}</div>
+                                <h4 class="font-bold text-[12px] text-white mb-1.5 leading-tight pr-8">${p.judul}</h4>
+                                <div class="text-[11px] text-gray-400 leading-relaxed ${isLong ? 'line-clamp-custom' : ''}" id="${uid}">${txt}</div>
+                                ${isLong ? `<button onclick="togglePengumuman('${uid}', this)" class="text-blue-400 text-[10px] font-semibold mt-1.5 hover:underline focus:outline-none">Selengkapnya</button>` : ''}
+                            </div>`;
+                    });
+                } else { if(!isEditPengumumanMode) pCont.innerHTML = `<p class="text-gray-500 text-[11px] px-1">Tidak ada info lab.</p>`; }
+            };
+            
+            renderPengumuman('dash-pengumuman-desktop'); renderPengumuman('dash-pengumuman-mobile');
+
+            const rCard = document.getElementById('home-reminder-card');
+            const now = new Date(); let thresholdDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()); if (now.getHours() >= 20) { thresholdDate.setDate(thresholdDate.getDate() + 1); }
+            let futureSch = upcomingPersonalSchedules.filter(s => { if (!s || !s.dateObj || !(s.dateObj instanceof Date) || isNaN(s.dateObj.getTime())) return false; let schDate = new Date(s.dateObj.getFullYear(), s.dateObj.getMonth(), s.dateObj.getDate()); return schDate.getTime() >= thresholdDate.getTime(); });
+            
+            let targetTime = null; let futureJaga = futureSch.filter(s => s.type === 'jaga');
+            if (futureJaga.length > 0) { targetTime = futureJaga[0].time; } else if (futureSch.length > 0) { targetTime = futureSch[0].time; }
+
+            if (!targetTime) {
+                if(rCard) rCard.innerHTML = `<div class="text-center py-2"><div class="w-9 h-9 rounded-full bg-[#2a2a2a] border border-[#333] text-white flex items-center justify-center mx-auto mb-2"><i class="fa-solid fa-mug-hot text-xs"></i></div><h3 class="text-[13px] font-bold text-white mb-0.5">Free Day</h3><p class="text-[10px] text-gray-400">Belum ada jadwal dalam waktu dekat.</p></div>`;
+            } else {
+                let targetSchs = upcomingPersonalSchedules.filter(s => s.time === targetTime); let myCode = currentUser.kode.replace(/\[|\]/g, '').toUpperCase();
+                let isToday = new Date(targetTime).toDateString() === now.toDateString(); let headerLabel = isToday ? "JADWAL HARI INI" : "JADWAL MENDATANG"; let iconHeader = isToday ? "fa-calendar-day" : "fa-calendar-check";
+                
+                let shifts = targetSchs.filter(s => s.type === 'jaga'); let pikets = targetSchs.filter(s => s.type === 'piket');
+                let putaranNum = (shifts.length > 0) ? shifts[0].data.putaran : (pikets.length > 0 ? pikets[0].putaran : '-');
+
+                let dashShiftContent = '';
+                if (shifts.length > 0) {
+                    let myShifts = shifts.filter(sch => sch.data.asisten.includes(myCode));
+                    let shiftPills = myShifts.sort((a,b) => a.data.shift - b.data.shift).map(sch => `<span class="bg-[#121212] border border-[#444] text-white text-[10px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-wider shadow-sm pointer-events-none">SHIFT ${sch.data.shift}</span>`).join('');
+                    if(!shiftPills) shiftPills = '<span class="text-[10px] text-gray-500 italic">Bukan shift Anda</span>';
+
+                    let shiftRowsExpanded = shifts.sort((a,b)=>a.data.shift - b.data.shift).map(s => { let partners = s.data.asisten; let partnerPills = partners.length > 0 ? partners.map(k => createPill(k, k === myCode)).join('') : '<span class="text-[10px] text-gray-500 font-mono italic">Kosong</span>'; return `<div class="flex flex-col mb-1.5"><span class="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-1.5">Rekan Shift ${s.data.shift}</span><div class="flex flex-wrap gap-1.5 items-center">${partnerPills}</div></div>`; }).join('');
+                    
+                    dashShiftContent = `
+                        <details class="group/shift outline-none shift-details bg-[#1a1a1a] rounded-xl border border-[#333] mb-3">
+                            <summary class="flex items-center justify-between cursor-pointer outline-none select-none p-2.5 rounded-xl hover:bg-[#252525] transition">
+                                <div class="flex flex-wrap gap-1.5 pointer-events-none">${shiftPills}</div>
+                                <i class="fa-solid fa-chevron-down text-gray-500 text-xs transition-transform group-open/shift:rotate-180 ml-2"></i>
+                            </summary>
+                            <div class="border-t border-[#333] p-3 space-y-3">
+                                ${shiftRowsExpanded}
+                            </div>
+                        </details>
+                    `;
+                }
+
+                let dashPiketContent = '';
+                if (pikets.length > 0) {
+                    let task = pikets[0].task || "Laporan dan Kebersihan"; let allPiketAsisten = jadwalPiketList[pikets[0].hari] || []; allPiketAsisten = [...new Set(allPiketAsisten.map(k => k.replace(/\[|\]/g, '').toUpperCase()))];
+                    let pPills = allPiketAsisten.length > 0 ? allPiketAsisten.map(k => createPill(k, k === myCode)).join('') : '<span class="text-[10px] text-gray-500 font-mono italic">Kosong</span>';
+                    
+                    dashPiketContent = `
+                        <details class="group/shift outline-none shift-details bg-[#1a1a1a] rounded-xl border border-[#333] mb-3">
+                            <summary class="flex items-center justify-between cursor-pointer outline-none select-none p-2.5 rounded-xl hover:bg-[#252525] transition">
+                                <span class="bg-[#121212] border border-[#444] text-white text-[10px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-wider shadow-sm flex items-center gap-1.5 pointer-events-none"><i class="fa-solid fa-broom text-blue-400"></i> Piket</span>
+                                <i class="fa-solid fa-chevron-down text-gray-500 text-xs transition-transform group-open/shift:rotate-180 ml-2"></i>
+                            </summary>
+                            <div class="border-t border-[#333] p-3 space-y-3">
+                                <span class="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-1 block">Tugas: ${task}</span>
+                                <div class="flex flex-wrap gap-1.5 items-center">${pPills}</div>
+                            </div>
+                        </details>
+                    `;
+                }
+
+                if(rCard) rCard.innerHTML = `
+                    <div class="flex items-center gap-2 mb-2"><div class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0"><i class="fa-solid ${iconHeader} text-[10px]"></i></div><span class="text-[11px] font-bold text-gray-300 uppercase tracking-widest">${headerLabel}</span></div>
+                    <div class="flex items-center gap-2.5 mb-3"><h2 class="text-[18px] md:text-xl font-bold text-white tracking-wide">${formatDateFull(new Date(targetTime))}</h2><span class="bg-[#121212] border border-[#444] text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm ml-1.5">P${putaranNum}</span></div>
+                    ${dashShiftContent}
+                    ${dashPiketContent}
+                `;
+            }
+
+            renderJadwal(); renderRepositori();
+        }
+
+        function openModalPengumuman() {
+            let access = checkPengumumanAccess(); let select = document.getElementById('modal-target-pengumuman'); select.innerHTML = '';
+            if(access.asisten) select.innerHTML += `<option value="asisten">Pengumuman Asisten</option>`;
+            if(access.praktikan) select.innerHTML += `<option value="praktikan">Pengumuman Praktikan</option>`;
+            document.getElementById('modal-pengumuman').classList.remove('hidden');
+        }
+
+        function closeModalPengumuman() { document.getElementById('modal-pengumuman').classList.add('hidden'); document.getElementById('form-pengumuman').reset(); }
+
+        async function submitPengumuman(e) {
+            e.preventDefault(); 
+            const btn = document.getElementById('btn-submit-pengumuman'); 
+            btn.disabled = true; 
+            btn.innerText = 'Mengirim...';
+            
+            const target = document.getElementById('modal-target-pengumuman').value; 
+            const judul = document.getElementById('modal-judul').value; 
+            const isi = document.getElementById('modal-isi').value;
+            
+            const now = new Date(); 
+            const d = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']; 
+            const m = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+            const tgl = `${d[now.getDay()]}, ${now.getDate()} ${m[now.getMonth()]} ${now.getFullYear()}`;
+
+            let fd = new URLSearchParams(); 
+            fd.append('action', 'add_pengumuman'); 
+            fd.append('target', target); 
+            fd.append('tanggal', tgl); 
+            fd.append('judul', judul); 
+            fd.append('isi', isi);
+            
+            try { 
+                let res = await fetch(sheetApiUrl, { 
+                    method: 'POST', 
+                    body: fd.toString(), 
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' } 
+                }); 
+                
+                let json = await res.json(); 
+                
+                if(json.success === true || json.result === 'success') { 
+                    showToast('Pengumuman berhasil ditambahkan!', 'success'); 
+                    closeModalPengumuman(); 
+                    refreshData(); 
+                } else {
+                    console.log("SERVER GOOGLE MENOLAK:", json);
+                    throw new Error(json.error || "Gagal memproses data di server."); 
+                } 
+            } catch(err) { 
+                console.error("Submit pengumuman error detail:", err); 
+                showToast('Gagal mengirim pengumuman', 'error'); 
+            } finally { 
+                btn.disabled = false; 
+                btn.innerText = 'Kirim Pengumuman'; 
+            }
+        }
+
+        async function changePassword() {
+            const oldInput = document.getElementById('input-old-pass'); const newInput = document.getElementById('input-new-pass'); 
+            const btn = document.getElementById('btn-change-pass'); const oldPass = oldInput.value.trim(); const newPass = newInput.value.trim(); 
+            if(!oldPass || !newPass) { showToast("Isi kedua kolom password", "error"); return; }
+            const session = JSON.parse(localStorage.getItem('asisten_session'));
+            if(oldPass !== session.pass) { showToast("Password lama salah", "error"); return; }
+            btn.innerText = 'Menyimpan...'; btn.disabled = true;
+            try { const res = await fetch(`${sheetApiUrl}?action=change_pass_asisten&nim=${currentUser.nim}&newpass=${encodeURIComponent(newPass)}`); const json = await res.json(); if(json.success) { oldInput.value = ''; newInput.value = ''; localStorage.setItem('asisten_session', JSON.stringify({ nim: currentUser.nim, pass: newPass })); showToast("Password berhasil diubah", "success");} else { showToast("Gagal mengubah password", "error");} } catch(e) { console.error("Change pass error:", e); showToast("Error jaringan", "error");} 
+            finally { btn.innerText = 'Simpan Perubahan'; btn.disabled = false; }
+        }
+
+        function togglePengumuman(id, btn) {
+            const el = document.getElementById(id);
+            if (el.classList.contains('line-clamp-custom')) { el.classList.remove('line-clamp-custom'); btn.innerText = 'Sembunyikan'; } 
+            else { el.classList.add('line-clamp-custom'); btn.innerText = 'Selengkapnya'; }
+        }
+
+        // ======================= FUNGSI PRESENSI ASISTEN =======================
+        function openPresensiAsistenModal() {
+            if (!currentUser) return;
+            const now = new Date();
+            const todayStr = now.toDateString();
+            
+            const todayShifts = upcomingPersonalSchedules.filter(s => s.type === 'jaga' && new Date(s.time).toDateString() === todayStr);
+            if (todayShifts.length === 0) { showToast("Anda tidak memiliki jadwal shift hari ini.", "error"); return; }
+
+            const selectShift = document.getElementById('presensi-shift-select');
+            selectShift.innerHTML = '<option value="" disabled selected>-- Pilih Shift --</option>';
+            
+            let addedShifts = [];
+            todayShifts.sort((a,b) => a.data.shift - b.data.shift).forEach(s => {
+                if (!addedShifts.includes(s.data.shift)) {
+                    selectShift.innerHTML += `<option value="Shift ${s.data.shift}">Shift ${s.data.shift}</option>`;
+                    addedShifts.push(s.data.shift);
+                }
+            });
+
+            const selectAst = document.getElementById('presensi-add-ast-select');
+            selectAst.innerHTML = '<option value="" disabled selected>Pilih Asisten</option>';
+            
+            if (globalData.asisten && globalData.asisten.length > 0) {
+                const kNama = findKey(globalData.asisten[0], 'nama');
+                const kKode = findKey(globalData.asisten[0], 'kode');
+                
+                globalData.asisten.sort((a,b) => (a[kNama]||"").localeCompare(b[kNama]||"")).forEach(ast => {
+                    if(ast[kNama] && ast[kKode]) {
+                        let kodeS = String(ast[kKode]).replace(/\[|\]/g, '').toUpperCase();
+                        let textFormat = `${ast[kNama]} [${kodeS}]`;
+                        selectAst.innerHTML += `<option value="${textFormat}">${textFormat}</option>`;
+                    }
+                });
+            }
+
+            presensiAddedAssistants = [];
+            let pjCleanKode = currentUser.kode.replace(/\[|\]/g, '').toUpperCase();
+            let pjFormat = `${currentUser.namaLengkap} [${pjCleanKode}]`;
+            presensiAddedAssistants.push({ kode: pjFormat, isTelat: false, isDouble: false });
+
+            renderPresensiAssistantList();
+            document.getElementById('modal-presensi-asisten').classList.remove('hidden');
+        }
+
+        function closePresensiAsistenModal() { document.getElementById('modal-presensi-asisten').classList.add('hidden'); }
+
+        function addAsistenToPresensi() {
+            const select = document.getElementById('presensi-add-ast-select'); const kodeFull = select.value;
+            if (!kodeFull) { showToast("Pilih nama asisten terlebih dahulu!", "error"); return; }
+            if (presensiAddedAssistants.some(a => a.kode === kodeFull)) { showToast(`Asisten sudah ada di daftar.`, "info"); return; }
+            
+            presensiAddedAssistants.push({ kode: kodeFull, isTelat: false, isDouble: false });
+            select.value = ''; renderPresensiAssistantList();
+        }
+
+        function removeAsistenFromPresensi(kodeFull) {
+            presensiAddedAssistants = presensiAddedAssistants.filter(a => a.kode !== kodeFull);
+            renderPresensiAssistantList();
+        }
+
+        function toggleStatusAsisten(kodeFull, type, isChecked) {
+            const ast = presensiAddedAssistants.find(a => a.kode === kodeFull);
+            if (ast) { if (type === 'telat') ast.isTelat = isChecked; if (type === 'double') ast.isDouble = isChecked; renderPresensiAssistantList(); }
+        }
+
+        function updateAstData(kodeFull, key, value) {
+            const ast = presensiAddedAssistants.find(a => a.kode === kodeFull);
+            if(ast) ast[key] = value;
+        }
+
+        function renderPresensiAssistantList() {
+            const container = document.getElementById('presensi-ast-list'); container.innerHTML = '';
+            const dynContainer = document.getElementById('dynamic-inputs-container'); dynContainer.innerHTML = '';
+            let hasTelat = false; let hasDouble = false;
+            let telatHtml = ''; let doubleHtml = '';
+            
+            presensiAddedAssistants.forEach(ast => {
+                let skMatch = ast.kode.match(/\[(.*?)\]/);
+                let shortKode = skMatch ? skMatch[1] : ast.kode.substring(0,2);
+                let safeKode = ast.kode.replace(/'/g, "\\'");
+
+                let badgeTelat = ast.isTelat ? '<span class="bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded text-[8px] font-bold ml-1 uppercase">Telat</span>' : '';
+                let badgeDouble = ast.isDouble ? '<span class="bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded text-[8px] font-bold ml-1 uppercase">Double</span>' : '';
+
+                // 1. RENDER LIST NAMA ASISTEN + CHECKBOX
+                container.innerHTML += `
+                    <div class="flex items-center justify-between bg-[#1e1e1e] border border-[#333] p-2.5 rounded-xl">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-[#2a2a2a] text-white flex items-center justify-center font-bold font-mono text-[10px] shrink-0">${shortKode}</div>
+                            <div class="flex flex-col">
+                                <span class="text-white text-[11px] font-semibold line-clamp-1 pr-2">${ast.kode}</span>
+                                <div>${badgeTelat}${badgeDouble}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 shrink-0">
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" class="custom-cb" ${ast.isTelat ? 'checked' : ''} onchange="toggleStatusAsisten('${safeKode}', 'telat', this.checked)">
+                                <span class="text-[10px] text-gray-400 font-semibold">Telat</span>
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" class="custom-cb" ${ast.isDouble ? 'checked' : ''} onchange="toggleStatusAsisten('${safeKode}', 'double', this.checked)">
+                                <span class="text-[10px] text-gray-400 font-semibold">Double</span>
+                            </label>
+                            <button type="button" onclick="removeAsistenFromPresensi('${safeKode}')" class="ml-1 text-red-500 hover:text-red-400 outline-none"><i class="fa-solid fa-xmark text-sm"></i></button>
+                        </div>
+                    </div>
+                `;
+
+                // 2. RENDER DYNAMIC INPUTS (TELAT & DOUBLE)
+                if (ast.isTelat) {
+                    hasTelat = true;
+                    telatHtml += `
+                        <div class="flex items-center gap-1.5 w-full mb-1.5">
+                            <div class="bg-[#2a3f5a] text-white font-bold font-mono text-[11px] px-2 py-1.5 rounded-full shrink-0 flex items-center justify-center w-[45px] border border-[#3b5270] shadow-sm">[${shortKode}]</div>
+                            <div class="relative shrink-0 flex items-center">
+                                <input type="number" id="telat-waktu-${shortKode}" placeholder="0" value="${ast.menitTelat || ''}" onchange="updateAstData('${safeKode}', 'menitTelat', this.value)" class="w-[45px] bg-[#2a3f5a] text-white font-bold text-[11px] py-1.5 pl-2.5 pr-3 rounded-full border border-[#3b5270] shadow-sm outline-none text-center focus:border-blue-400">
+                                <span class="absolute right-2 text-white font-bold text-[10px] pointer-events-none">'</span>
+                            </div>
+                            <input type="text" id="telat-alasan-${shortKode}" placeholder="Alasan telat..." value="${ast.alasanTelat || ''}" onchange="updateAstData('${safeKode}', 'alasanTelat', this.value)" class="flex-1 bg-transparent border border-[#2a3f5a] rounded-full py-1.5 px-3 text-[11px] text-white outline-none focus:border-blue-400 font-medium">
+                        </div>
+                    `;
+                }
+
+                if (ast.isDouble) {
+                    hasDouble = true;
+                    doubleHtml += `
+                        <div class="flex items-center gap-1.5 w-full mb-1.5">
+                            <div class="bg-[#2a3f5a] text-white font-bold font-mono text-[11px] px-2 py-1.5 rounded-full shrink-0 flex items-center justify-center w-[45px] border border-[#3b5270] shadow-sm">[${shortKode}]</div>
+                            <input type="text" id="double-alasan-${shortKode}" placeholder="Modul dan alasan..." value="${ast.alasanDouble || ''}" onchange="updateAstData('${safeKode}', 'alasanDouble', this.value)" class="flex-1 bg-transparent border border-[#2a3f5a] rounded-full py-1.5 px-3 text-[11px] text-white outline-none focus:border-blue-400 font-medium">
+                        </div>
+                    `;
+                }
+            });
+
+            if (hasTelat || hasDouble) {
+                dynContainer.classList.remove('hidden');
+                let finalHtml = '';
+                if(hasTelat) {
+                    finalHtml += `
+                        <div class="flex flex-col gap-1.5 mt-2">
+                            <label class="text-[10px] font-bold uppercase tracking-wider pl-1 mb-1 flex items-center gap-1.5"><i class="fa-solid fa-clock"></i> Keterangan Telat</label>
+                            ${telatHtml}
+                        </div>
+                    `;
+                }
+                if(hasDouble) {
+                    finalHtml += `
+                        <div class="flex flex-col gap-1.5 ${hasTelat ? 'mt-3' : 'mt-2'}">
+                            <label class="text-[10px] font-bold uppercase tracking-wider pl-1 mb-1 flex items-center gap-1.5"><i class="fa-solid fa-copy"></i> Keterangan Double</label>
+                            ${doubleHtml}
+                        </div>
+                    `;
+                }
+                dynContainer.innerHTML = finalHtml;
+            } else {
+                dynContainer.classList.add('hidden');
+            }
+        }
+
+        async function submitPresensiAsisten(e) {
+            e.preventDefault();
+            if (presensiAddedAssistants.length === 0) { showToast("Tambahkan minimal 1 asisten yang hadir!", "error"); return; }
+            const btn = document.getElementById('btn-submit-presensi-ast'); btn.disabled = true; btn.innerText = 'Mengirim Data...';
+
+            const selectedShift = document.getElementById('presensi-shift-select').value;
+            
+            // Build string untuk teks Telat & Double
+            let arrTelat = []; let arrDouble = [];
+            presensiAddedAssistants.forEach(ast => {
+                let skMatch = ast.kode.match(/\[(.*?)\]/);
+                let shortKode = skMatch ? skMatch[1] : ast.kode.substring(0,2);
+                
+                if (ast.isTelat) {
+                    let menit = ast.menitTelat || "0";
+                    let alasanT = ast.alasanTelat || "-";
+                    arrTelat.push(`[${shortKode}] [${menit}'] ${alasanT}`);
+                }
+                if (ast.isDouble) {
+                    let alasanD = ast.alasanDouble || "-";
+                    arrDouble.push(`[${shortKode}] ${alasanD}`);
+                }
+            });
+            
+            const linkFormSheet = getLinkFromSheet('Presensi Asisten');
+            if (linkFormSheet === '#') {
+                showToast("Link Presensi Asisten belum diatur di Spreadsheet (sheet 'link')!", "error");
+                btn.disabled = false; btn.innerText = 'Kirim Data Absensi';
+                return;
+            }
+
+            try {
+                // Parsing ID Entry dari URL GForm di Spreadsheet
+                const url = new URL(linkFormSheet);
+                let actionUrl = url.origin + url.pathname.replace('/viewform', '/formResponse');
+                
+                let entries = {};
+                for (let [key, value] of url.searchParams.entries()) {
+                    if (key.startsWith('entry.')) entries[value.toLowerCase().trim()] = key;
+                }
+
+                let fd = new URLSearchParams();
+                
+                let pjCleanKode = currentUser.kode.replace(/\[|\]/g, '').toUpperCase();
+                let pjFormat = `${currentUser.namaLengkap} [${pjCleanKode}]`;
+                
+                if (entries['nama']) fd.append(entries['nama'], pjFormat);
+                if (entries['shift']) fd.append(entries['shift'], selectedShift);
+
+                presensiAddedAssistants.forEach(ast => {
+                    if (entries['hadir']) fd.append(entries['hadir'], ast.kode);
+                    if (ast.isTelat && entries['telat']) fd.append(entries['telat'], ast.kode);
+                    if (ast.isDouble && entries['double']) fd.append(entries['double'], ast.kode);
+                });
+
+                if (entries['alasantelat']) fd.append(entries['alasantelat'], arrTelat.length > 0 ? arrTelat.join('\n') : "-");
+                if (entries['alasandouble']) fd.append(entries['alasandouble'], arrDouble.length > 0 ? arrDouble.join('\n') : "-");
+
+                // === LOG TRACKING DATA TERKIRIM ===
+                let logData = {};
+                for(let [key, val] of fd.entries()) {
+                    if(!logData[key]) logData[key] = [];
+                    logData[key].push(val);
+                }
+                console.log("=========================================");
+                console.log("   DATA PRESENSI ASISTEN TERKIRIM        ");
+                console.log("=========================================");
+                console.log(JSON.stringify(logData, null, 2));
+                console.log("=========================================");
+
+                await fetch(actionUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: fd.toString() });
+                showToast("Presensi berhasil dikirim!", "success"); closePresensiAsistenModal();
+            } catch(err) { 
+                console.error("Presensi submit error:", err);
+                showToast("Gagal mengirim presensi, periksa format link di Spreadsheet.", "error"); 
+            } finally { 
+                btn.disabled = false; btn.innerText = 'Kirim Data Absensi'; 
+            }
+        }
+
+        // PWA INSTALL
+        let deferredPrompt;
+        const btnInstallPwa = document.getElementById('btn-install-pwa');
+
+        const isIos = () => {
+            const userAgent = window.navigator.userAgent.toLowerCase();
+            return /iphone|ipad|ipod/.test(userAgent);
+        };
+        const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone) || window.matchMedia('(display-mode: standalone)').matches;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); 
+            deferredPrompt = e; 
+            if (!isInStandaloneMode() && btnInstallPwa) {
+                btnInstallPwa.classList.remove('hidden');
+            }
+        });
+
+        if(btnInstallPwa) {
+            btnInstallPwa.addEventListener('click', async () => {
+                if (isIos()) {
+                    alert("Untuk install di iPhone/iPad:\n1. Tekan tombol 'Share' di bawah browser.\n2. Pilih 'Add to Home Screen' (+)");
+                    return;
+                }
+                
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`PWA Install status: ${outcome}`);
+                    if (outcome === 'accepted') {
+                        btnInstallPwa.classList.add('hidden');
+                    }
+                    deferredPrompt = null;
+                }
+            });
+        }
+
+        if (isIos() && !isInStandaloneMode() && btnInstallPwa) {
+            btnInstallPwa.classList.remove('hidden');
+            btnInstallPwa.querySelector('span').innerText = "Panduan Install iOS";
+        }
+
+        window.addEventListener('DOMContentLoaded', initApp);
+
+    </script>
+</body>
+</html>

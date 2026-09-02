@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portal Praktikan - Lab Fisika Terapan</title>
+    <link rel="icon" type="image/jpeg" href="https://i.ibb.co.com/nqxh13MB/logo-fister.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#121212">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://i.ibb.co.com/nqxh13MB/logo-fister.png">
+    <style>
+        body { 
+            margin: 0; 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #121212; 
+            color: #e0e0e0; 
+            overflow-x: hidden; 
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .surface-card { background-color: #1e1e1e; border-radius: 20px; }
+        .surface-container { background-color: #2a2a2a; border-radius: 16px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes loadingBar { 0% { width: 0%; left: 0; } 50% { width: 100%; left: 0; } 100% { width: 0%; left: 100%; } }
+        
+        .refresh-bar-anim { animation: loadingBar 1.5s infinite ease-in-out; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease-out forwards; }
+        .tab-content.active { display: block; }
+        .login-hide { display: none !important; }
+
+        .app-nav-item.active { background-color: rgba(37, 99, 235, 0.15); color: #ffffff; font-weight: 700; }
+        .mobile-nav-item { flex: 1; display: flex; justify-content: center; align-items: center; padding: 4px 0; color: #888; height: 100%; transition: all 0.2s ease; }
+        .mobile-nav-item i { font-size: 1.1rem; color: #ffffff; opacity: 0.6; }
+        .mobile-nav-item.active .nav-indicator { background-color: rgba(37, 99, 235, 0.25); padding: 6px 18px; border-radius: 100px; }
+        .mobile-nav-item.active i { color: #ffffff; opacity: 1; }
+        
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #424242; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #616161; }
+
+        .line-clamp-custom { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+
+        @media (max-width: 768px) {
+        ::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+        * {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        }
+
+        #qr-reader video {
+            object-fit: cover !important;
+            width: 100% !important;
+            min-height: 250px !important;
+        }
+
+        #qr-reader__scan_region svg, 
+        #qr-reader__scan_region img {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="relative min-h-screen flex flex-col antialiased selection:bg-blue-500/30">
+
+    <!-- Container Toast Alert -->
+    <div id="toast-container" class="fixed top-5 right-5 md:top-8 md:right-8 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
+
+    <div id="top-loading-bar" class="hidden fixed top-0 left-0 w-full h-1 z-[999] overflow-hidden bg-[#1e1e1e]">
+        <div class="h-full bg-blue-500 refresh-bar-anim absolute"></div>
+    </div>
+
+    <div id="loading-view" class="fixed inset-0 z-50 flex items-center justify-center bg-[#121212]">
+        <div class="flex flex-col items-center gap-3">
+            <div class="w-10 h-10 border-4 border-[#2a2a2a] border-t-blue-500 rounded-full animate-spin"></div>
+            <p class="text-gray-400 text-xs font-medium">Memuat...</p>
+        </div>
+    </div>
+
+    <div id="login-view" class="login-hide min-h-screen items-center justify-center p-5 relative z-40 w-full flex bg-[#121212]">
+        <div class="surface-card w-full max-w-sm p-7 shadow-xl border border-[#2a2a2a]">
+            <div class="text-center mb-6">
+                <img src="https://i.ibb.co.com/nqxh13MB/logo-fister.png" class="w-14 h-14 rounded-full mx-auto mb-3 object-cover">
+                <h2 class="text-xl font-bold text-white tracking-tight">Portal Praktikan</h2>
+            </div>
+            
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-[11px] font-semibold text-gray-400 mb-1.5 flex items-center gap-1.5"><i class="fa-solid fa-id-card text-white"></i> NIM</label>
+                    <input type="text" id="login-nim" name="username" autocomplete="username" placeholder="333..." class="w-full bg-[#121212] border border-[#333333] rounded-xl p-3.5 text-sm text-white focus:outline-none focus:border-blue-500 transition font-medium">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-gray-400 mb-1.5 flex items-center gap-1.5"><i class="fa-solid fa-key text-white"></i> PASSWORD</label>
+                    <div class="relative">
+                        <input type="password" id="login-pass" name="password" autocomplete="current-password" placeholder="••••••••" class="w-full bg-[#121212] border border-[#333333] rounded-xl p-3.5 text-sm text-white focus:outline-none focus:border-blue-500 transition font-medium pr-10">
+                        <button type="button" onclick="toggleVisibility('login-pass', 'eye-icon-login')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white z-10">
+                            <i id="eye-icon-login" class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="login-error" class="hidden text-red-400 text-xs p-2.5 bg-red-500/10 rounded-lg text-center font-medium">
+                    <i class="fa-solid fa-circle-exclamation mr-1 text-white"></i> NIM atau password salah.
+                </div>
+                
+                <button type="submit" id="btn-login" class="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition text-sm">
+                    Masuk
+                </button>
+
+                <div class="text-center pt-1">
+                    <a href="javascript:void(0)" onclick="openModalLupaPassword()" class="text-[11px] text-blue-400 hover:text-blue-300 transition">Lupa Password?</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-lupa-password" class="fixed inset-0 z-[120] hidden bg-[#121212]/90 flex items-center justify-center p-5">
+        <div class="surface-card w-full max-w-sm p-6 relative text-center shadow-2xl border border-[#333]">
+            <h3 class="text-lg font-bold text-white mb-2 flex items-center justify-center gap-2"><i class="fa-solid fa-circle-question text-white"></i> Lupa Password?</h3>
+            <p class="text-xs text-gray-400 mb-6 leading-relaxed">
+                Silakan hubungi asisten laboratorium untuk membantu reset password Anda.
+            </p>
+            <div class="flex gap-2.5">
+                <button onclick="closeModalLupaPassword()" class="flex-1 bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white font-semibold py-2.5 rounded-xl transition text-sm">Tutup</button>
+                <a href="index.html" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition text-sm inline-block text-center">Hubungi Asisten</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-view" class="login-hide min-h-screen relative z-30 w-full flex">
+        
+        <header class="md:hidden fixed top-0 left-0 w-full z-40 bg-[#1c1c1c] border-b border-[#2a2a2a] px-4 py-3 flex justify-between items-center shadow-sm">
+            <div class="flex items-center gap-2.5"><img src="https://i.ibb.co.com/nqxh13MB/logo-fister.png" class="h-6 w-6 rounded-full object-cover"><span class="font-bold text-white text-[14px]">Lab Fister</span></div>
+            <button onclick="refreshData()" class="text-white hover:text-blue-400 transition bg-[#2a2a2a] rounded-full flex items-center justify-center w-7 h-7"><i class="fa-solid fa-rotate-right text-[11px]"></i></button>
+        </header>
+
+        <aside class="hidden md:flex flex-col md:w-[88px] lg:w-[220px] bg-[#1a1a1a] border-r border-[#2a2a2a] fixed h-full z-40 py-6 px-3.5 justify-between transition-all duration-300">
+            <div class="flex flex-col gap-6 w-full">
+                <div class="flex md:justify-center lg:justify-start items-center gap-3 px-1 lg:px-2">
+                    <img src="https://i.ibb.co.com/nqxh13MB/logo-fister.png" class="h-10 w-10 rounded-full object-cover shrink-0">
+                    <div class="hidden lg:block">
+                        <span class="block font-bold text-base text-white leading-tight">Lab Fister</span>
+                        <span class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Portal Praktikan</span>
+                    </div>
+                </div>
+
+                <nav class="space-y-1.5 w-full flex flex-col">
+                    <button onclick="switchAppTab('home')" class="app-nav-item active flex items-center md:justify-center lg:justify-start gap-3.5 p-3.5 lg:p-3 rounded-full lg:rounded-xl text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200 transition w-full text-left" data-tab="home">
+                        <i class="fa-solid fa-house w-5 text-center text-white text-sm"></i>
+                        <span class="hidden lg:block text-[13px] font-medium whitespace-nowrap">Dashboard</span>
+                    </button>
+                    <button onclick="switchAppTab('jadwal')" class="app-nav-item flex items-center md:justify-center lg:justify-start gap-3.5 p-3.5 lg:p-3 rounded-full lg:rounded-xl text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200 transition w-full text-left" data-tab="jadwal">
+                        <i class="fa-solid fa-calendar-days w-5 text-center text-white text-sm"></i>
+                        <span class="hidden lg:block text-[13px] font-medium whitespace-nowrap">Jadwal Praktikum</span>
+                    </button>
+                    <button onclick="switchAppTab('repo')" class="app-nav-item flex items-center md:justify-center lg:justify-start gap-3.5 p-3.5 lg:p-3 rounded-full lg:rounded-xl text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200 transition w-full text-left" data-tab="repo">
+                        <i class="fa-solid fa-folder w-5 text-center text-white text-sm"></i>
+                        <span class="hidden lg:block text-[13px] font-medium whitespace-nowrap">Repositori</span>
+                    </button>
+                    <button onclick="switchAppTab('nilai')" class="app-nav-item flex items-center md:justify-center lg:justify-start gap-3.5 p-3.5 lg:p-3 rounded-full lg:rounded-xl text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200 transition w-full text-left" data-tab="nilai">
+                        <i class="fa-solid fa-graduation-cap w-5 text-center text-white text-sm"></i>
+                        <span class="hidden lg:block text-[13px] font-medium whitespace-nowrap">Data Nilai</span>
+                    </button>
+                    
+                    <div class="h-px w-full bg-[#2a2a2a] my-1.5"></div>
+                    
+                    <button onclick="refreshData()" class="app-nav-item flex items-center md:justify-center lg:justify-start gap-3.5 p-3.5 lg:p-3 rounded-full lg:rounded-xl text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200 transition w-full text-left">
+                        <i class="fa-solid fa-rotate-right w-5 text-center text-white text-sm"></i>
+                        <span class="hidden lg:block text-[13px] font-medium whitespace-nowrap">Muat Ulang Data</span>
+                    </button>
+                </nav>
+            </div>
+            
+            <div class="flex flex-col w-full">
+                <button onclick="switchAppTab('profil')" class="app-nav-item flex items-center md:justify-center lg:justify-start gap-3.5 p-3.5 lg:p-3 rounded-full lg:rounded-xl text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200 transition w-full text-left" data-tab="profil">
+                    <div id="sidebar-avatar" class="w-6 h-6 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-[10px] shrink-0"></div>
+                    <span class="hidden lg:block text-[13px] font-medium whitespace-nowrap">Profil Saya</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 md:ml-[88px] lg:ml-[220px] pt-14 md:pt-8 pb-20 md:pb-8 p-3 md:p-5 w-full max-w-7xl mx-auto flex flex-col transition-all duration-300">
+            
+            <section id="app-tab-home" class="tab-content active w-full">
+                <div class="mb-5 flex flex-col md:flex-row md:items-end justify-between gap-3">
+                    <div class="flex-1">
+                        <h1 class="text-xl md:text-2xl font-bold text-white mb-1 flex items-center gap-1.5">
+                            Halo, <span id="home-greeting-name">Praktikan</span> 👋
+                        </h1>
+                        <p class="text-[13px] text-gray-400">Selamat datang kembali di dashboard Lab. Fister.</p>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col md:flex-row gap-4 md:gap-5">
+                    <div class="flex-1 space-y-4 md:space-y-5">
+                        <div class="surface-card p-5 border border-[#2a2a2a]" id="home-reminder-card">
+                            <div class="animate-pulse h-12 bg-[#2a2a2a] rounded-xl"></div>
+                        </div>
+
+                        <div class="md:hidden">
+                            <h3 class="text-[11px] font-bold text-gray-300 mb-2.5 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-bullhorn text-white"></i> Informasi
+                            </h3>
+                            <div id="dash-pengumuman-mobile" class="flex overflow-x-auto gap-3 pb-2 snap-x custom-scrollbar"></div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-[11px] font-bold text-gray-300 mb-2.5 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-bolt text-white"></i> Menu
+                            </h3>
+                            <div class="grid grid-cols-3 gap-2.5 mb-3">
+                                <button onclick="switchAppTab('repo')" class="surface-card p-3.5 flex flex-col items-center justify-center text-center hover:bg-[#252525] transition border border-[#2a2a2a]">
+                                    <div class="w-8 h-8 rounded-full bg-[#2a2a2a] text-white flex items-center justify-center mb-1.5">
+                                        <i class="fa-solid fa-folder text-[13px]"></i>
+                                    </div>
+                                    <h4 class="font-semibold text-[10px] text-gray-200 leading-tight">File & Materi</h4>
+                                </button>
+                                <button id="btn-menu-presensi" onclick="openPresensiFlow()" class="surface-card p-3.5 flex flex-col items-center justify-center text-center hover:bg-[#252525] transition border border-[#2a2a2a]">
+                                    <div id="icon-menu-presensi" class="w-8 h-8 rounded-full bg-[#2a2a2a] text-white flex items-center justify-center mb-1.5">
+                                        <i class="fa-solid fa-clipboard-user text-[13px]"></i>
+                                    </div>
+                                    <h4 class="font-semibold text-[10px] text-gray-200 leading-tight">Presensi</h4>
+                                </button>
+                                <button onclick="openModalAsisten()" class="surface-card p-3.5 flex flex-col items-center justify-center text-center hover:bg-[#252525] transition border border-[#2a2a2a]">
+                                    <div class="w-8 h-8 rounded-full bg-[#2a2a2a] text-white flex items-center justify-center mb-1.5">
+                                        <i class="fa-solid fa-user-tie text-[13px]"></i>
+                                    </div>
+                                    <h4 class="font-semibold text-[10px] text-gray-200 leading-tight">Asisten</h4>
+                                </button>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-2.5">
+                                <div class="surface-card p-4 flex flex-col items-center justify-center text-center border border-[#2a2a2a]">
+                                    <h4 id="home-modul-count" class="font-bold text-xl text-white mb-0.5">0/6</h4>
+                                    <p class="text-[9px] text-gray-400 font-medium uppercase tracking-wider">Modul Selesai</p>
+                                </div>
+                                <div class="surface-card p-4 flex flex-col items-center justify-center text-center border border-[#2a2a2a]">
+                                    <h4 id="home-nilai-akhir" class="font-bold text-xl text-white mb-0.5">--</h4>
+                                    <p class="text-[9px] text-gray-400 font-medium uppercase tracking-wider">Nilai Akhir</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="hidden md:flex flex-col w-1/3 min-w-[320px] max-w-[400px]">
+                        <h3 class="text-[11px] font-bold text-gray-300 mb-2.5 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-bullhorn text-white"></i> Informasi Terbaru
+                        </h3>
+                        <div id="dash-pengumuman-desktop" class="flex-1 space-y-3 overflow-y-auto custom-scrollbar pr-2" style="max-height: calc(100vh - 160px);">
+                            <div class="surface-card p-5 animate-pulse h-20 bg-[#1e1e1e] border border-[#2a2a2a]"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="app-tab-jadwal" class="tab-content w-full max-w-4xl mx-auto">
+                <h2 class="text-xl font-bold text-white mb-4">Jadwal Praktikum</h2>
+                <div id="jadwal-top-card" class="mb-5"></div>
+                
+                <h3 class="text-[11px] font-bold text-gray-300 mb-4 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-clock-rotate-left text-white"></i> Timeline Jadwal
+                </h3>
+                <div class="space-y-4 relative ml-2.5 border-l-2 border-[#2a2a2a] pl-5" id="jadwal-timeline-container">
+                </div>
+            </section>
+
+            <section id="app-tab-repo" class="tab-content w-full max-w-4xl mx-auto">
+                <h2 class="text-xl font-bold text-white mb-4">Repositori</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="repo-container">
+                    
+                    <div class="surface-card p-5 flex flex-col justify-between hover:bg-[#252525] transition border border-[#2a2a2a] h-full">
+                        <div class="flex items-start gap-3 mb-4">
+                            <div class="w-10 h-10 bg-[#2a2a2a] text-white rounded-full flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-file-pdf text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-white text-[14px]">File & Materi</h3>
+                                <p class="text-[12px] text-gray-400 mt-0.5 leading-tight">Berkas untuk kelengkapan praktikum.</p>
+                            </div>
+                        </div>
+                        <a id="repo-link-materi" href="#" target="_blank" class="w-full bg-[#121212] hover:bg-[#1a1a1a] border border-[#333] text-center py-2.5 rounded-xl text-sm text-white font-semibold transition">Akses File</a>
+                    </div>
+                    
+                    <div class="surface-card p-5 flex flex-col justify-between hover:bg-[#252525] transition border border-[#2a2a2a] h-full">
+                        <div class="flex items-start gap-3 mb-4">
+                            <div class="w-10 h-10 bg-[#2a2a2a] text-white rounded-full flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-envelope-open-text text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-white text-[14px]">Surat Bebas</h3>
+                                <p class="text-[12px] text-gray-400 mt-0.5 leading-tight">Pengajuan & Pengambilan surat bebas praktikum.</p>
+                            </div>
+                        </div>
+                        <button onclick="openModalSuratBebas()" class="w-full bg-[#121212] hover:bg-[#1a1a1a] border border-[#333] text-center py-2.5 rounded-xl text-sm text-white font-semibold transition">Kelola Surat</button>
+                    </div>
+
+                    <div class="surface-card p-5 flex flex-col justify-between hover:bg-[#252525] transition border border-[#2a2a2a] h-full">
+                        <div class="flex items-start gap-3 mb-4">
+                            <div class="w-10 h-10 bg-[#2a2a2a] text-white rounded-full flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-toolbox text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-white text-[14px]">Peminjaman Alat</h3>
+                                <p class="text-[12px] text-gray-400 mt-0.5 leading-tight">Formulir peminjaman alat laboratorium.</p>
+                            </div>
+                        </div>
+                        <a id="repo-link-alat" href="#" target="_blank" class="w-full bg-[#121212] hover:bg-[#1a1a1a] border border-[#333] text-center py-2.5 rounded-xl text-sm text-white font-semibold transition">Isi Formulir</a>
+                    </div>
+
+                    <div class="surface-card p-5 flex flex-col justify-between hover:bg-[#252525] transition border border-[#2a2a2a] h-full" id="repo-pdf-wrapper">
+                        <div class="flex items-start gap-3 mb-4">
+                            <div class="w-10 h-10 bg-blue-900/30 text-blue-400 rounded-full flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-star text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-white text-[14px]">Transparansi Nilai</h3>
+                                <p class="text-[12px] text-gray-400 mt-0.5 leading-tight">Berkas nilai praktikum lengkap.</p>
+                            </div>
+                        </div>
+                        <a id="repo-link-pdf" href="#" target="_blank" class="w-full bg-blue-600 hover:bg-blue-700 text-center py-2.5 rounded-xl text-sm text-white font-semibold transition">Buka Dokumen</a>
+                    </div>
+                </div>
+            </section>
+
+            <section id="app-tab-nilai" class="tab-content w-full max-w-4xl mx-auto">
+                <h2 class="text-xl font-bold text-white mb-4">Data Nilai</h2>
+                <div id="app-nilai-container" class="space-y-4">
+                    <div class="surface-card p-5 animate-pulse h-24 bg-[#1e1e1e] border border-[#2a2a2a]"></div>
+                </div>
+            </section>
+
+            <section id="app-tab-profil" class="tab-content w-full max-w-2xl mx-auto">
+                <h2 class="text-xl font-bold text-white mb-4">Profil Saya</h2>
+                
+                <div class="surface-card p-5 mb-4 text-center border border-[#2a2a2a]">
+                    <div id="prof-avatar-big" class="w-16 h-16 rounded-full bg-blue-600 mx-auto flex items-center justify-center text-white text-xl font-bold mb-3"></div>
+                    <h3 id="prof-namaLengkap" class="text-[17px] font-bold text-white">--</h3>
+                    <p id="prof-nim-detail" class="text-gray-400 text-xs mt-0.5 font-mono">--</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-4">
+                    <div class="surface-container p-3.5 border border-[#333]">
+                        <p class="text-[9px] text-gray-500 font-semibold uppercase tracking-widest mb-1 flex items-center gap-1.5"><i class="fa-solid fa-book text-white"></i> Jurusan</p>
+                        <p id="prof-jurusan" class="font-bold text-[13px] text-gray-200 leading-tight">--</p>
+                    </div>
+                    <div class="surface-container p-3.5 border border-[#333]">
+                        <p class="text-[9px] text-gray-500 font-semibold uppercase tracking-widest mb-1 flex items-center gap-1.5"><i class="fa-solid fa-users text-white"></i> Grup </p>
+                        <p id="prof-kelkecil" class="font-bold text-[13px] text-gray-200 leading-tight">--</p>
+                    </div>
+                </div>
+
+                <div class="surface-card p-5 mb-4 border border-[#2a2a2a]">
+                    <h4 class="text-[11px] font-bold text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-1.5"><i class="fa-solid fa-user-group text-white"></i> Kelompok <span id="prof-kelsedang">--</span></h4>
+                    <div id="prof-teman-container" class="space-y-2"></div>
+                </div>
+
+                <div class="surface-card p-4 space-y-2.5 border border-[#2a2a2a]">
+                    <h4 class="text-[11px] font-bold text-gray-300 uppercase tracking-wider mb-2 px-1 flex items-center gap-1.5"><i class="fa-solid fa-gear text-white"></i> Pengaturan</h4>
+                    <details class="group cursor-pointer">
+                        <summary class="flex items-center justify-between outline-none bg-[#2a2a2a] p-3.5 rounded-xl border border-[#333]">
+                            <div class="flex items-center gap-2.5"><i class="fa-solid fa-lock text-white text-[13px]"></i><span class="font-semibold text-[13px] text-gray-200">Ganti Password</span></div>
+                            <i class="fa-solid fa-chevron-down text-gray-400 transition-transform group-open:rotate-180 text-xs"></i>
+                        </summary>
+                        <div class="mt-2 p-4 bg-[#2a2a2a] rounded-xl border border-[#333] flex flex-col gap-3">
+                            <div class="relative">
+                                <input type="password" id="input-old-pass" placeholder="Password Lama" class="w-full bg-[#121212] border border-[#444] rounded-lg px-4 py-3 text-[13px] text-white focus:outline-none focus:border-blue-500 transition pr-10">
+                                <button type="button" onclick="toggleVisibility('input-old-pass', 'eye-icon-old')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white z-10">
+                                    <i id="eye-icon-old" class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="relative">
+                                <input type="password" id="input-new-pass" placeholder="Password Baru" class="w-full bg-[#121212] border border-[#444] rounded-lg px-4 py-3 text-[13px] text-white focus:outline-none focus:border-blue-500 transition pr-10">
+                                <button type="button" onclick="toggleVisibility('input-new-pass', 'eye-icon-new')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white z-10">
+                                    <i id="eye-icon-new" class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
+                            <button onclick="changePassword()" id="btn-change-pass" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-[13px] font-semibold transition mt-1">Simpan Password</button>
+                            <p id="pass-msg" class="text-xs hidden"></p>
+                        </div>
+                    </details>
+                    
+                    <button id="btn-install-pwa" class="hidden w-full bg-[#2a2a2a] hover:bg-blue-500/20 text-blue-400 border border-[#333] hover:border-blue-500/30 p-3.5 rounded-xl flex items-center justify-between gap-2 transition font-semibold text-[13px]">
+                        <div class="flex items-center gap-2.5">
+                            <i class="fa-solid fa-download text-white text-[13px]"></i>
+                            <span class="text-gray-200">Install Aplikasi</span>
+                        </div>
+                    </button>
+
+                    <button onclick="doLogout()" class="w-full bg-[#2a2a2a] hover:bg-red-500/20 text-red-400 border border-[#333] hover:border-red-500/30 p-3.5 rounded-xl flex items-center justify-center gap-2 transition font-semibold text-[13px]">
+                        <i class="fa-solid fa-right-from-bracket"></i> Logout
+                    </button>
+                </div>
+            </section>
+        </main>
+        <nav id="mobile-navbar" class="login-hide md:hidden fixed bottom-3 left-3 right-3 bg-[#1e1e1e] shadow-2xl z-50 flex justify-around items-center px-1 py-1 rounded-full border border-[#333333]">
+            <button onclick="switchAppTab('home')" class="mobile-nav-item active" data-tab="home">
+                <div class="nav-indicator"><i class="fa-solid fa-house"></i></div>
+            </button>
+            <button onclick="switchAppTab('jadwal')" class="mobile-nav-item" data-tab="jadwal">
+                <div class="nav-indicator"><i class="fa-solid fa-calendar-days"></i></div>
+            </button>
+            <button onclick="switchAppTab('repo')" class="mobile-nav-item" data-tab="repo">
+                <div class="nav-indicator"><i class="fa-solid fa-folder"></i></div>
+            </button>
+            <button onclick="switchAppTab('nilai')" class="mobile-nav-item" data-tab="nilai">
+                <div class="nav-indicator"><i class="fa-solid fa-graduation-cap"></i></div>
+            </button>
+            <button onclick="switchAppTab('profil')" class="mobile-nav-item" data-tab="profil">
+                <div class="nav-indicator"><i class="fa-solid fa-user"></i></div>
+            </button>
+        </nav>
+
+        <div id="modal-surat-bebas" class="fixed inset-0 z-[110] hidden bg-[#121212]/90 flex items-center justify-center p-4">
+            <div class="surface-card w-full max-w-sm p-5 relative border border-[#333]">
+                <button onclick="document.getElementById('modal-surat-bebas').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <h3 class="text-[17px] font-bold text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-file-signature text-white"></i> Surat Bebas</h3>
+                <div class="space-y-2.5">
+                    <a id="link-surat-req" href="#" target="_blank" class="block w-full bg-blue-600 hover:bg-blue-700 text-center py-3 rounded-xl text-[13px] text-white font-semibold transition">Form Pengajuan Surat</a>
+                    <a id="link-surat-get" href="#" target="_blank" class="block w-full bg-[#2a2a2a] hover:bg-[#333] border border-[#444] text-center py-3 rounded-xl text-[13px] text-white font-semibold transition">Ambil Dokumen (Drive)</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-asisten" class="fixed inset-0 z-[110] hidden bg-[#121212]/90 flex items-center justify-center p-4">
+            <div class="surface-card w-full max-w-md p-5 relative max-h-[80vh] flex flex-col border border-[#333]">
+                <button onclick="document.getElementById('modal-asisten').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-white z-10"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <h3 class="text-[17px] font-bold text-white mb-3 pb-2.5 border-b border-[#333] flex items-center gap-2"><i class="fa-solid fa-address-book text-white"></i> Daftar Asisten</h3>
+                <div class="overflow-y-auto custom-scrollbar pr-2 space-y-2 flex-1" id="list-asisten-container">
+                    <p class="text-xs text-gray-500 text-center py-3">Memuat data asisten...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL QR -->
+        <div id="modal-qr-scanner" class="fixed inset-0 z-[120] hidden bg-[#121212]/90 flex items-center justify-center p-5">
+            <div class="surface-card w-full max-w-sm p-6 relative border border-[#333] shadow-2xl">
+                <button onclick="closeQRScanner()" class="absolute top-4 right-4 text-gray-400 hover:text-white z-10"><i class="fa-solid fa-xmark text-xl"></i></button>
+                <h3 class="text-[17px] font-bold text-white mb-4 text-center"><i class="fa-solid fa-qrcode text-blue-400 mr-2"></i>QR Presensi</h3>
+                <div id="qr-reader" class="w-full bg-black rounded-xl overflow-hidden border border-[#444]"></div>
+                <p class="text-xs text-gray-400 text-center mt-4 leading-relaxed">Scan QR Code yang tersedia sesuai dengan jurusan masing-masing.</strong></p>
+            </div>
+        </div>
+
+        <!-- MODAL FORM PRESENSI -->
+        <div id="modal-presensi-form" class="fixed inset-0 z-[120] hidden bg-[#121212]/90 flex items-center justify-center p-4">
+            <div class="surface-card w-full max-w-sm p-6 relative border border-[#333] shadow-2xl flex flex-col max-h-[90vh]">
+                <button onclick="document.getElementById('modal-presensi-form').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-white z-10"><i class="fa-solid fa-xmark text-xl"></i></button>
+                <h3 class="text-[17px] font-bold text-white mb-4 flex items-center gap-2 shrink-0"><i class="fa-solid fa-clipboard-check text-blue-400"></i> Form Presensi</h3>
+                
+                <div class="overflow-y-auto custom-scrollbar pr-2 flex-1">
+                    <form id="presensi-gform-sim" onsubmit="submitPresensiForm(event)" class="space-y-3 pb-2">
+                        <div class="flex flex-col gap-3 mb-2">
+                            <div class="bg-[#1a1a1a] p-3.5 rounded-xl border border-[#333]">
+                                <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Putaran Praktikum</p>
+                                <p id="pre-putaran" class="text-white font-bold text-sm">--</p>
+                            </div>
+                            <div class="bg-[#1a1a1a] p-3.5 rounded-xl border border-[#333]">
+                                <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Nama Modul</p>
+                                <p id="pre-modul" class="text-white font-bold text-[13px]">--</p>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-400 mb-1.5 flex items-center gap-1.5"><i class="fa-solid fa-user-tie"></i> Asisten Modul</label>
+                            <select id="presensi-asisten" required class="w-full bg-[#121212] border border-[#333] rounded-xl p-3.5 text-sm text-white focus:outline-none focus:border-blue-500 transition font-medium appearance-none">
+                                <option value="">-- Pilih Asisten --</option>
+                            </select>
+                        </div>
+
+                        <!-- SECTION KRITIK & SARAN -->
+                        <div id="kritsar-container" class="hidden flex-col gap-3 mt-4 pt-4 border-t border-[#333]">
+                            <div>
+                                <h4 class="text-[12px] font-bold text-blue-400 uppercase tracking-wider mb-1 flex items-center gap-1.5"><i class="fa-solid fa-comment-dots"></i> Kritik & Saran Lab</h4>
+                                <p class="text-[10px] text-gray-400 leading-relaxed mb-3">Untuk membantu meningkatkan pelaksanaan Praktikum Fisika Dasar, kami memohon partisipasi Anda untuk memberikan masukan berupa kritik dan saran.</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-300 mb-1.5">1. Kritik dan saran untuk mekanisme jalannya PFD</label>
+                                <textarea id="kritsar-mekanisme" rows="2" placeholder="Berikan kritik dan saran untuk mekanisme jalannya praktikum." class="w-full bg-[#121212] border border-[#333] rounded-xl p-3 text-xs text-white focus:outline-none focus:border-blue-500 transition"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-300 mb-1.5">2. Kritik dan saran untuk sistem, sarana dan prasarana LFT</label>
+                                <textarea id="kritsar-sarana" rows="2" placeholder="Berikan kritik dan saran untuk media informasi, video prosedur percobaan, presensi, website, mading, dll." class="w-full bg-[#121212] border border-[#333] rounded-xl p-3 text-xs text-white focus:outline-none focus:border-blue-500 transition"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-300 mb-1.5">3. Kritik dan saran untuk asisten LFT </label>
+                                <textarea id="kritsar-asisten" rows="2" placeholder="Berikan kritik dan saran untuk asisten, dan dapat menyertakan kode asisten. Misal, [HT]" class="w-full bg-[#121212] border border-[#333] rounded-xl p-3 text-xs text-white focus:outline-none focus:border-blue-500 transition"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="pt-3">
+                            <button type="submit" id="btn-submit-presensi" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition text-sm">Kirim Presensi</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const sheetApiUrl = '/api/gas';        
+        let globalData = { link: [], pengumuman: [], nilai: [], jadwal: [], asisten: [] };
+        let currentUser = null; 
+        let scheduleData = [];
+        let isTransparansiAktif = false;
+        
+        let html5QrcodeScanner = null;
+        let tempDataPresensi = null;
+        
+        // FUNGSI CUSTOM TOAST ALERT
+        function showToast(type, message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgColor = 'bg-blue-600'; let icon = 'fa-info-circle';
+            if (type === 'success') { bgColor = 'bg-green-600'; icon = 'fa-check-circle'; }
+            if (type === 'error') { bgColor = 'bg-red-600'; icon = 'fa-circle-exclamation'; }
+            
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl text-white text-[13px] font-semibold transition-all duration-300 transform translate-x-[120%] opacity-0 ${bgColor} border border-white/10`;
+            toast.innerHTML = `<i class="fa-solid ${icon} text-lg"></i> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => { toast.classList.remove('translate-x-[120%]', 'opacity-0'); }, 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-[120%]');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        const setTxt = (id, text) => { const el = document.getElementById(id); if(el) el.innerText = text; };
+        const findKey = (obj, keyword) => Object.keys(obj || {}).find(k => k.trim().toLowerCase().includes(keyword.toLowerCase()));
+
+        function toggleVisibility(inputId, iconId) {
+            const passInput = document.getElementById(inputId);
+            const eyeIcon = document.getElementById(iconId);
+            if(passInput.type === 'password') {
+                passInput.type = 'text';
+                eyeIcon.classList.remove('fa-eye'); eyeIcon.classList.add('fa-eye-slash');
+            } else {
+                passInput.type = 'password';
+                eyeIcon.classList.remove('fa-eye-slash'); eyeIcon.classList.add('fa-eye');
+            }
+        }
+
+        function togglePasswordVisibility() { toggleVisibility('login-pass', 'eye-icon-login'); }
+
+        function formatText(str) {
+            if(!str) return "";
+            let safeText = str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return safeText.replace(urlRegex, '<a href="$1" target="_blank" class="text-blue-400 font-semibold hover:underline break-all">$1</a>').replace(/\n/g, "<br>");
+        }
+
+        function formatDateFull(dateObj) {
+            const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+            const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+            return `${days[dateObj.getDay()]}, ${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+        }
+        
+        function parseDateLocal(dateStr) {
+            if(!dateStr) return new Date(0);
+            const p = String(dateStr).split('/');
+            return p.length === 3 ? new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0])) : new Date(dateStr);
+        }
+
+        function checkTransparansiStatus() {
+            if(globalData.link && globalData.link.length > 0) {
+                const kJud = findKey(globalData.link[0], 'judul');
+                const kStat = findKey(globalData.link[0], 'tambahan') || findKey(globalData.link[0], 'status');
+                const tRow = globalData.link.find(i => kJud && String(i[kJud]).trim().toLowerCase().includes('transparansi nilai'));
+                isTransparansiAktif = tRow && kStat && String(tRow[kStat]).trim().toLowerCase() === 'aktif';
+            } else { isTransparansiAktif = false; }
+        }
+
+        function getGradeColor(grade) {
+            const g = grade.toUpperCase();
+            if(['A','A-','B+','B','B-'].includes(g)) return 'text-green-400 bg-green-900/30 border border-green-800/50';
+            if(['C+','C'].includes(g)) return 'text-yellow-400 bg-yellow-900/30 border border-yellow-800/50';
+            if(['D','E'].includes(g)) return 'text-red-400 bg-red-900/30 border border-red-800/50';
+            return 'text-gray-400 bg-[#2a2a2a] border border-[#333]'; 
+        }
+
+        function formatNilai(val) {
+            if (val === null || val === undefined || val === '' || val === '-') return '-';
+            let num = parseFloat(String(val).replace(',', '.'));
+            if (!isNaN(num)) return Number.isInteger(num) ? num : num.toFixed(2);
+            return val;
+        }
+
+        async function fetchAndSaveData() {
+            const response = await fetch(sheetApiUrl); 
+            globalData = await response.json();
+            localStorage.setItem('praktikan_data', JSON.stringify(globalData));
+            checkTransparansiStatus();
+        }
+
+        async function fetchPartialDataBg() {
+            try {
+                const response = await fetch(sheetApiUrl); 
+                const newData = await response.json();
+                if(newData.pengumuman) globalData.pengumuman = newData.pengumuman;
+                if(newData.nilai) globalData.nilai = newData.nilai;
+                if(newData.link) globalData.link = newData.link;
+                localStorage.setItem('praktikan_data', JSON.stringify(globalData));
+                checkTransparansiStatus();
+                renderDashboard();
+            } catch (e) {
+                console.log("Silent fetch failed");
+            }
+        }
+
+        async function initApp() {
+            const sessionStr = localStorage.getItem('praktikan_session');
+            const dataStr = localStorage.getItem('praktikan_data');
+
+            if (sessionStr && dataStr) {
+                const session = JSON.parse(sessionStr);
+                globalData = JSON.parse(dataStr);
+                checkTransparansiStatus();
+                if (processUserData(session.nim, session.pass)) { 
+                    showAppView();
+                    fetchPartialDataBg(); 
+                    return; 
+                }
+            }
+
+            if (sessionStr) { document.getElementById('loading-view').classList.remove('login-hide'); document.getElementById('login-view').classList.add('login-hide'); } 
+            else { showLoginView(); return; }
+
+            try {
+                await fetchAndSaveData();
+                const session = JSON.parse(localStorage.getItem('praktikan_session'));
+                if(processUserData(session.nim, session.pass)) { showAppView(); } 
+                else { doLogout(); }
+            } catch (error) { if(dataStr) { showAppView(); } else showLoginView(); }
+        }
+
+        async function refreshData() {
+            const bar = document.getElementById('top-loading-bar');
+            bar.classList.remove('hidden');
+            try {
+                await fetchAndSaveData();
+                const session = JSON.parse(localStorage.getItem('praktikan_session'));
+                processUserData(session.nim, session.pass);
+            } catch (e) {
+                showToast('error', 'Gagal memuat ulang data dari server.');
+            } finally {
+                bar.classList.add('hidden');
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault(); 
+            const nim = document.getElementById('login-nim').value.trim();
+            const pass = document.getElementById('login-pass').value.trim();
+            const btn = document.getElementById('btn-login');
+            const err = document.getElementById('login-error');
+            
+            err.classList.add('hidden');
+            if(!nim || !pass) return;
+
+            btn.innerText = "Memverifikasi...";
+            
+            try { await fetchAndSaveData(); } 
+            catch(error) { err.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-1"></i> Gagal koneksi server.`; err.classList.remove('hidden'); btn.innerText = "Masuk"; return; }
+
+            if(processUserData(nim, pass)) {
+                localStorage.setItem('praktikan_session', JSON.stringify({ nim: nim, pass: pass }));
+                showAppView();
+                
+                showPWAPrompt();
+            } else { err.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-1"></i> NIM atau password salah.`; err.classList.remove('hidden'); }
+            btn.innerText = "Masuk";
+        }
+
+        function doLogout() {
+            localStorage.removeItem('praktikan_session');
+            localStorage.removeItem('praktikan_data');
+            currentUser = null;
+            document.getElementById('login-nim').value = '';
+            document.getElementById('login-pass').value = '';
+            showLoginView();
+        }
+
+        function showLoginView() { 
+            document.getElementById('loading-view').classList.add('login-hide');
+            document.getElementById('app-view').classList.add('login-hide');
+            document.getElementById('mobile-navbar').classList.add('login-hide');
+            document.getElementById('login-view').classList.remove('login-hide');
+        }
+        
+        function showAppView() { 
+            document.getElementById('loading-view').classList.add('login-hide');
+            document.getElementById('login-view').classList.add('login-hide');
+            document.getElementById('mobile-navbar').classList.remove('login-hide');
+            document.getElementById('app-view').classList.remove('login-hide');
+        }
+
+        function processUserData(nim, pass) {
+            if(!globalData.jadwal || globalData.jadwal.length === 0) return false;
+
+            const kNim = findKey(globalData.jadwal[0], 'nim');
+            const kPass = findKey(globalData.jadwal[0], 'password');
+            const kNama = findKey(globalData.jadwal[0], 'nama');
+            const kKelB = findKey(globalData.jadwal[0], 'kelompok besar');
+            const kKelS = findKey(globalData.jadwal[0], 'kelompok sedang');
+            const kKelK = findKey(globalData.jadwal[0], 'kelompok kecil');
+            const kKdJur = findKey(globalData.jadwal[0], 'kode jurusan');
+            const kJur = findKey(globalData.jadwal[0], 'jurusan');
+            const kMod = findKey(globalData.jadwal[0], 'modul');
+            const pKey = findKey(globalData.jadwal[0], 'putaran');
+            const tKey = findKey(globalData.jadwal[0], 'tanggal');
+            const kPresensi = findKey(globalData.jadwal[0], 'presensi');
+
+            const userRow = globalData.jadwal.find(d => kNim && kPass && String(d[kNim]).trim() === nim && String(d[kPass]).trim() === pass);
+            if(!userRow) return false;
+
+            const namaLengkap = userRow[kNama] || "Praktikan";
+            const parts = namaLengkap.split(' ');
+            let callName = parts[0];
+            if(parts.length > 1 && ['muhammad','m','siti'].includes(callName.toLowerCase())) { callName = parts[1]; }
+
+            let historyStr = (kPresensi && userRow[kPresensi]) ? String(userRow[kPresensi]) : "";
+            let riwayatArr = historyStr.split(',').map(s => s.trim()).filter(s => s !== "");
+
+            currentUser = {
+                nim: nim, namaLengkap: namaLengkap, namaPanggilan: callName,
+                kelBesar: String(userRow[kKelB] || "").trim().toUpperCase(),
+                kelSedang: String(userRow[kKelS] || "").trim(), kelKecil: String(userRow[kKelK] || "").trim(),
+                riwayatPresensi: riwayatArr
+            };
+
+            const userKdJur = nim.charAt(3); 
+            
+            const allMods = globalData.jadwal.filter(d => kJur && String(d[kJur]).trim().toLowerCase() === 'all').map(d => d[kMod]);
+            
+            const specificModsRaw = globalData.jadwal.filter(d => {
+                if(!d[kKdJur] || !d[kMod]) return false;
+                const codes = String(d[kKdJur]).split(',').map(c => c.trim());
+                return codes.includes(userKdJur);
+            });
+
+            let primaryMod = null;
+            let extraMods = [];
+
+            specificModsRaw.forEach(d => {
+                const codes = String(d[kKdJur]).split(',').map(c => c.trim());
+                if (codes[0] === userKdJur) {
+                    primaryMod = d[kMod]; 
+                    currentUser.jurusan = d[kJur] || "Umum";
+                } else {
+                    extraMods.push(d[kMod]); 
+                }
+            });
+
+            const normalMods = [...allMods];
+            if (primaryMod) normalMods.push(primaryMod);
+            
+            currentUser.totalModul = normalMods.length + extraMods.length; 
+
+            const shiftTimes = {};
+            const kHari = findKey(globalData.jadwal[0], 'hari');
+            const kS1 = findKey(globalData.jadwal[0], 's1');
+            const kS2 = findKey(globalData.jadwal[0], 's2');
+            const kS3 = findKey(globalData.jadwal[0], 's3');
+            const kS4 = findKey(globalData.jadwal[0], 's4');
+
+            if (kHari && kS1) {
+                globalData.jadwal.forEach(row => {
+                    if (row[kHari] && String(row[kHari]).trim() !== "") {
+                        const day = String(row[kHari]).trim().toLowerCase();
+                        shiftTimes[day] = { 1: row[kS1] || '', 2: row[kS2] || '', 3: row[kS3] || '', 4: row[kS4] || '' };
+                    }
+                });
+            }
+            currentUser.shiftTimes = shiftTimes;
+
+            scheduleData = [];
+            const angKel = parseInt(currentUser.kelSedang.replace(/\D/g, '')) || 1; 
+            let currentPutaran = 1;
+            
+            globalData.jadwal.forEach(row => {
+                if(row[pKey] && String(row[pKey]).trim() !== "") currentPutaran = parseInt(row[pKey]);
+                
+                if (row[tKey] && String(row[tKey]).trim() !== "") {
+                    let s = 0;
+                    if (String(row['Shift 1']||"").trim().toUpperCase() === currentUser.kelBesar) s = 1;
+                    else if (String(row['Shift 2']||"").trim().toUpperCase() === currentUser.kelBesar) s = 2;
+                    else if (String(row['Shift 3']||"").trim().toUpperCase() === currentUser.kelBesar) s = 3;
+                    else if (String(row['Shift 4']||"").trim().toUpperCase() === currentUser.kelBesar) s = 4;
+                    
+                    if (s > 0) {
+                        let assignedModul = "?";
+                        
+                        if (currentPutaran <= 6) {
+                            assignedModul = normalMods[(currentPutaran + angKel - 2) % normalMods.length] || "?";
+                        } else {
+                            if (extraMods.length > 0) {
+                                const extraPutaranIdx = currentPutaran - 7; 
+                                const pairIdx = Math.floor((angKel - 1) / 2); 
+                                assignedModul = extraMods[(extraPutaranIdx + pairIdx) % extraMods.length] || "?";
+                            } else {
+                                assignedModul = "-"; 
+                            }
+                        }
+
+                        scheduleData.push({ putaran: currentPutaran, tanggal: String(row[tKey]).trim(), shift: s, modul: assignedModul });
+                    }
+                }
+            });
+            
+            scheduleData.sort((a, b) => parseDateLocal(a.tanggal) - parseDateLocal(b.tanggal));
+
+            setupRepoLinks();
+            renderDashboard();
+            return true;
+        }
+
+        function switchAppTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('app-tab-' + tabId).classList.add('active');
+            
+            document.querySelectorAll('.app-nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll(`.app-nav-item[data-tab="${tabId}"]`).forEach(el => el.classList.add('active'));
+
+            document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll(`.mobile-nav-item[data-tab="${tabId}"]`).forEach(el => el.classList.add('active'));
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderDashboard() {
+            const inisial = currentUser.namaPanggilan.charAt(0).toUpperCase();
+            setTxt('home-greeting-name', currentUser.namaPanggilan);
+            setTxt('sidebar-avatar', inisial); setTxt('prof-avatar-big', inisial);
+            setTxt('prof-namaLengkap', currentUser.namaLengkap); setTxt('prof-nim-detail', currentUser.nim);
+            setTxt('prof-jurusan', currentUser.jurusan); setTxt('prof-kelkecil', currentUser.kelKecil);
+            setTxt('prof-kelsedang', currentUser.kelSedang);
+            
+            const renderPengumuman = (containerId) => {
+                const pCont = document.getElementById(containerId);
+                if(!pCont) return;
+                pCont.innerHTML = '';
+                
+                let validPengumuman = [];
+                if(globalData.pengumuman && globalData.pengumuman.length > 0) {
+                   const kJudul = findKey(globalData.pengumuman[0], 'judul');
+                   const kTgl = findKey(globalData.pengumuman[0], 'tanggal');
+                   const kIsi = findKey(globalData.pengumuman[0], 'isi');
+
+                   if(kJudul && kTgl && kIsi) {
+                       validPengumuman = [...globalData.pengumuman]
+                           .filter(p => p[kJudul] && String(p[kJudul]).trim() !== '')
+                           .sort((a, b) => parseDateLocal(b[kTgl]) - parseDateLocal(a[kTgl]));
+                   }
+                }
+
+                if(validPengumuman.length > 0) {
+                    const isSingle = validPengumuman.length === 1;
+                    const kJudul = findKey(validPengumuman[0], 'judul');
+                    const kTgl = findKey(validPengumuman[0], 'tanggal');
+                    const kIsi = findKey(validPengumuman[0], 'isi');
+                    
+                    validPengumuman.forEach((p, idx) => {
+                        const textHtml = formatText(p[kIsi]);
+                        const isLong = String(p[kIsi]).length > 100; 
+                        const uid = `${containerId}-${idx}`;
+                        
+                        const cardClass = containerId === 'dash-pengumuman-mobile' 
+                            ? `surface-container ${isSingle ? 'w-full' : 'min-w-[260px] w-[85%] snap-center'} p-4 flex-shrink-0 border border-[#333]` 
+                            : 'surface-container p-5 mb-3 border border-[#333]';
+
+                        pCont.innerHTML += `
+                            <div class="${cardClass}">
+                                <div class="flex items-center gap-1.5 mb-2.5">
+                                    <span class="inline-block bg-[#121212] border border-[#444] text-gray-300 px-2.5 py-1 rounded-full text-[9px] font-bold"><i class="fa-solid fa-clock mr-1"></i> ${p[kTgl]}</span>
+                                </div>
+                                <h4 class="font-bold text-[14px] text-white mb-1.5 leading-tight">${p[kJudul]}</h4>
+                                <div class="text-[13px] text-gray-400 leading-relaxed ${isLong ? 'line-clamp-custom' : ''}" id="${uid}">${textHtml}</div>
+                                ${isLong ? `<button onclick="togglePengumuman('${uid}', this)" class="text-blue-400 text-xs font-semibold mt-2 hover:underline">Baca selengkapnya</button>` : ''}
+                            </div>`;
+                    });
+                } else { pCont.innerHTML = `<p class="text-gray-500 text-xs px-1">Belum ada informasi terbaru.</p>`; }
+            };
+            renderPengumuman('dash-pengumuman-desktop');
+            renderPengumuman('dash-pengumuman-mobile');
+
+            renderJadwal();
+
+            const kNim = findKey(globalData.jadwal[0], 'nim');
+            const kSed = findKey(globalData.jadwal[0], 'kelompok sedang');
+            const kKec = findKey(globalData.jadwal[0], 'kelompok kecil');
+            const kNama = findKey(globalData.jadwal[0], 'nama');
+            
+            const listTeman = document.getElementById('prof-teman-container'); listTeman.innerHTML = '';
+            const tmnAll = globalData.jadwal.filter(d => d[kSed] === currentUser.kelSedang);
+            const kelKecilSet = [...new Set(tmnAll.map(t => t[kKec]))];
+            
+            kelKecilSet.forEach(kk => {
+                let mhsDiKk = tmnAll.filter(t => t[kKec] === kk);
+                let listHtml = mhsDiKk.map(t => `
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#1e1e1e] mb-2 border border-[#333]">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-full bg-[#2a2a2a] text-white flex justify-center items-center font-bold text-xs">${(t[kNama]||'?').charAt(0)}</div>
+                            <div>
+                                <p class="text-[13px] font-semibold text-gray-200 leading-tight">${t[kNama]}</p>
+                                <p class="text-[11px] text-gray-500 font-mono">${t[kNim]}</p>
+                            </div>
+                        </div>
+                        ${t[kNim]===currentUser.nim ? '<span class="text-[9px] bg-blue-600/20 text-blue-400 px-2 py-1 rounded-full font-bold">ANDA</span>' : ''}
+                    </div>`).join('');
+                listTeman.innerHTML += `
+                    <details class="bg-[#2a2a2a] rounded-xl p-3.5 mb-2 group border border-[#333]">
+                        <summary class="font-bold text-[13px] text-gray-300 cursor-pointer flex justify-between outline-none">
+                            <div class="flex items-center gap-2">Grup ${kk}</div> 
+                            <i class="fa-solid fa-chevron-down text-gray-500 group-open:rotate-180 transition text-xs"></i>
+                        </summary>
+                        <div class="mt-3">${listHtml}</div>
+                    </details>`;
+            });
+
+            let mhsNilai = null;
+            if(globalData.nilai && globalData.nilai.length > 0) {
+                const nNimKey = findKey(globalData.nilai[0], 'nim');
+                mhsNilai = globalData.nilai.find(d => nNimKey && String(d[nNimKey]).trim() === currentUser.nim);
+            }
+
+            if(isTransparansiAktif) {
+                if (mhsNilai) {
+                    const getVal = (kw) => { const k = Object.keys(mhsNilai).find(x => x.trim().toLowerCase() === kw.toLowerCase()); return k && mhsNilai[k] ? formatNilai(mhsNilai[k]) : '0'; };
+                    const vAkhir = getVal('Nilai Asli + Sosialisasi');
+                    let score = parseFloat(String(vAkhir).replace(',', '.')); let grade = '-';
+                    if(!isNaN(score)) {
+                        if(score>85)grade='A';else if(score>80)grade='A-';else if(score>75)grade='B+';else if(score>70)grade='B';else if(score>65)grade='B-';else if(score>60)grade='C+';else if(score>55)grade='C';else if(score>50)grade='D';else grade='E';
+                    }
+                    setTxt('home-nilai-akhir', vAkhir);
+                    renderTabNilai(mhsNilai, vAkhir, grade, getVal);
+                } else {
+                    setTxt('home-nilai-akhir', "--");
+                    document.getElementById('app-nilai-container').innerHTML = `<div class="surface-card p-6 text-center rounded-xl border border-[#2a2a2a]"><p class="text-xs text-gray-400">Data nilai Anda belum tersedia.</p></div>`;
+                }
+            } else {
+                setTxt('home-nilai-akhir', "--");
+                document.getElementById('app-nilai-container').innerHTML = `<div class="surface-card p-8 text-center rounded-xl border border-[#2a2a2a]"><i class="fa-solid fa-lock text-gray-600 text-3xl mb-3"></i><h3 class="text-[15px] font-bold text-gray-300 mb-1.5">Transparansi Ditutup</h3><p class="text-xs text-gray-500">Periode transparansi nilai saat ini belum aktif.</p></div>`;
+            }
+
+            renderAsisten();
+        }
+
+        function togglePengumuman(uid, btn) {
+            const el = document.getElementById(uid);
+            if(el.classList.contains('line-clamp-custom')) {
+                el.classList.remove('line-clamp-custom'); btn.innerText = "Tutup";
+            } else {
+                el.classList.add('line-clamp-custom'); btn.innerText = "Baca selengkapnya";
+            }
+        }
+
+        function renderJadwal() {
+            const lCont = document.getElementById('jadwal-timeline-container'); lCont.innerHTML = '';
+            const rCard = document.getElementById('home-reminder-card');
+            const topCard = document.getElementById('jadwal-top-card');
+            const btnMenuPresensi = document.getElementById('btn-menu-presensi');
+            const iconMenuPresensi = document.getElementById('icon-menu-presensi');
+            
+            const now = new Date(); 
+            const nowTime = now.getTime();
+            let modSelesai = 0; 
+
+            let nextModule = null;
+            let pendingReportModule = null;
+
+            scheduleData.forEach((sch) => {
+                const schDate = parseDateLocal(sch.tanggal);
+                const expirationTime = schDate.getTime() + (19 * 60 * 60 * 1000); 
+
+                const deadlineDate = new Date(schDate.getTime() + (7 * 24 * 60 * 60 * 1000));
+                const deadlineExpiration = deadlineDate.getTime() + (19 * 60 * 60 * 1000);
+                
+                let isPast = nowTime > expirationTime;
+                let isToday = (schDate.getDate() === now.getDate() && schDate.getMonth() === now.getMonth() && schDate.getFullYear() === now.getFullYear());
+                let isPendingReport = isPast && (nowTime <= deadlineExpiration);
+
+                const deadlineDays = (deadlineExpiration - nowTime) / (1000 * 60 * 60 * 24);
+                let isDeadToday = (deadlineDate.getDate() === now.getDate() && deadlineDate.getMonth() === now.getMonth() && deadlineDate.getFullYear() === now.getFullYear());
+
+                const dayNames = ['minggu','senin','selasa','rabu','kamis','jumat','sabtu'];
+                const dayName = dayNames[schDate.getDay()];
+                let timeStr = "";
+                if (currentUser.shiftTimes && currentUser.shiftTimes[dayName]) {
+                    timeStr = currentUser.shiftTimes[dayName][sch.shift];
+                }
+                sch.timeStr = timeStr; 
+
+                let sObj = {};
+                let isWarning = false;
+                let countdownText = "";
+                
+                if (isPendingReport) {
+                    if (isDeadToday) {
+                        isWarning = true;
+                        sObj = { t: 'Deadline Hari Ini', c: 'text-red-400 bg-red-900/30 border border-red-900/50', cardClass: 'bg-red-950/20 border-red-900/50' };
+                        countdownText = "Dikumpulkan Hari Ini!";
+                    } else if (deadlineDays <= 1 && deadlineDays > 0) {
+                        isWarning = true;
+                        sObj = { t: 'Laporan (H-1)', c: 'text-orange-400 bg-orange-900/30 border border-orange-900/50', cardClass: 'bg-orange-950/20 border-orange-900/50' };
+                        countdownText = "Besok";
+                    } else {
+                        sObj = { t: 'Laporan', c: 'text-blue-400 bg-blue-900/20 border border-blue-900/50', cardClass: 'border-[#2a2a2a]' };
+                        countdownText = `${Math.ceil(deadlineDays)} hari lagi`;
+                    }
+                } else if (isPast) {
+                    sObj = { t: 'Selesai', c: 'text-gray-400 bg-[#2a2a2a] border border-[#333]', cardClass: 'border-[#2a2a2a]' };
+                } else if (isToday) {
+                    sObj = { t: 'Hari Ini', c: 'text-white bg-blue-600 border border-blue-500', cardClass: 'border-blue-900/50 bg-blue-950/10' };
+                } else {
+                    sObj = { t: 'Belum', c: 'text-gray-500 bg-[#1e1e1e] border border-[#333]', cardClass: 'border-[#2a2a2a]' };
+                }
+
+                if (isPast) modSelesai++;
+                if (!isPast && !nextModule) { nextModule = { sch, schDate, isToday }; }
+                if (isPendingReport) { pendingReportModule = { sch, deadlineDate, schDate: parseDateLocal(sch.tanggal) }; }
+
+                const isPastUI = sObj.t === 'Laporan' || sObj.t === 'Selesai';
+                const circleColor = isWarning ? 'bg-red-500' : (isPastUI ? 'bg-[#333]' : 'bg-blue-500');
+
+                lCont.innerHTML += `
+                    <div class="relative mb-4">
+                        <div class="absolute -left-[27.5px] top-3.5 w-3 h-3 rounded-full ${circleColor} border-[3px] border-[#121212]"></div>
+                        <div class="surface-card p-4 border ${sObj.cardClass}">
+                            <div class="flex justify-between items-start mb-2.5">
+                                <span class="text-[11px] font-semibold text-gray-400">Putaran ${sch.putaran}</span>
+                                <span class="text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full ${sObj.c}">${sObj.t}</span>
+                            </div>
+                            <h4 class="text-[17px] font-bold text-white mb-1">Modul ${sch.modul}</h4>
+                            <p class="text-[13px] text-gray-400">${formatDateFull(schDate)} <span class="mx-1.5">•</span> Shift ${sch.shift} ${timeStr ? `<span class="text-gray-500 font-semibold ml-1">(${timeStr})</span>` : ''}</p>
+                            ${isPendingReport ? `
+                                <div class="mt-3 pt-3 border-t ${isWarning ? 'border-red-900/50' : 'border-[#333]'}">
+                                    <div class="flex justify-between text-[10px] mb-1.5 ${isWarning ? 'text-red-400' : 'text-gray-400'}"><span class="font-semibold">Tenggat Laporan ${sch.modul}</span><span>${countdownText}</span></div>
+                                    <div class="w-full bg-[#121212] h-1 rounded-full overflow-hidden border border-[#333]"><div class="${isWarning ? 'bg-red-500' : 'bg-blue-500'} h-full rounded-full" style="width: ${(1-(deadlineDays/7))*100}%"></div></div>
+                                </div>` : ''}
+                        </div>
+                    </div>`;
+            });
+
+            let reminderHTML = '';
+            let headerModule = nextModule ? nextModule : pendingReportModule;
+
+            if (headerModule) {
+                let remIcon = nextModule 
+                    ? `<div class="w-10 h-10 rounded-full bg-[#2a2a2a] border border-[#333] text-white flex items-center justify-center shrink-0"><i class="fa-solid fa-calendar-day text-[15px]"></i></div>` 
+                    : `<div class="w-10 h-10 rounded-full bg-[#2a2a2a] border border-[#333] text-white flex items-center justify-center shrink-0"><i class="fa-solid fa-clock-rotate-left text-[15px]"></i></div>`;
+                
+                reminderHTML += `
+                    <div class="flex items-center gap-3 mb-3">
+                        ${remIcon}
+                        <div class="text-left w-full">
+                            <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">${nextModule ? 'Praktikum Berikutnya' : 'Tenggat Terdekat'}</p>
+                            <h3 class="text-[17px] font-bold text-white mb-0.5">Modul ${headerModule.sch.modul}</h3>
+                            <p class="text-[11px] text-gray-400">${formatDateFull(headerModule.schDate ? headerModule.schDate : headerModule.deadlineDate)} • Shift ${headerModule.sch.shift} ${headerModule.sch.timeStr ? `(${headerModule.sch.timeStr})` : ''}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            let isPresensiDone = false;
+            let activeSch = getActivePraktikum();
+            if (activeSch) {
+                const presensiKey = `presensi_${currentUser.nim}_${activeSch.putaran}_${activeSch.modul}`;
+                isPresensiDone = localStorage.getItem(presensiKey) === 'true';
+            }
+
+            if (nextModule && nextModule.isToday) {
+                if(isPresensiDone) {
+                    reminderHTML += `<button disabled class="block w-full bg-green-900/30 border border-green-800 text-green-400 font-bold py-3 mt-3 rounded-xl text-sm text-center transition cursor-not-allowed"><i class="fa-solid fa-check mr-2"></i>Sudah Presensi</button>`;
+                    if(iconMenuPresensi) {
+                        iconMenuPresensi.className = "w-8 h-8 rounded-full bg-green-900/30 text-green-400 border border-green-800 flex items-center justify-center mb-1.5";
+                        iconMenuPresensi.innerHTML = `<i class="fa-solid fa-check text-[13px]"></i>`;
+                    }
+                } else {
+                    reminderHTML += `<button onclick="openPresensiFlow()" class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 mt-3 rounded-xl text-sm text-center transition">Presensi Praktikum</button>`;
+                    if(iconMenuPresensi) {
+                        iconMenuPresensi.className = "w-8 h-8 rounded-full bg-[#2a2a2a] text-white flex items-center justify-center mb-1.5";
+                        iconMenuPresensi.innerHTML = `<i class="fa-solid fa-clipboard-user text-[13px]"></i>`;
+                    }
+                }
+            }
+            
+            if (pendingReportModule) {
+                const dDays = (pendingReportModule.deadlineDate.getTime() + (19 * 60 * 60 * 1000) - nowTime) / (1000 * 60 * 60 * 24);
+                let isDeadToday = (pendingReportModule.deadlineDate.getDate() === now.getDate() && pendingReportModule.deadlineDate.getMonth() === now.getMonth() && pendingReportModule.deadlineDate.getFullYear() === now.getFullYear());
+                
+                if (isDeadToday) {
+                    reminderHTML += `<div class="bg-red-950/30 border border-red-900/50 text-red-400 px-3 py-2.5 rounded-xl text-[12px] font-bold text-center w-full mt-3"><i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Tenggat Laporan ${pendingReportModule.sch.modul}: HARI INI</div>`;
+                } else if (dDays <= 1 && dDays >= 0) {
+                    reminderHTML += `<div class="bg-orange-950/30 border border-orange-900/50 text-orange-400 px-3 py-2.5 rounded-xl text-[12px] font-semibold text-center w-full mt-3">Tenggat Laporan ${pendingReportModule.sch.modul}: Besok (${formatDateFull(pendingReportModule.deadlineDate)})</div>`;
+                } else {
+                    reminderHTML += `<div class="bg-[#1e1e1e] border border-[#333] text-gray-300 px-3 py-2.5 rounded-xl text-[12px] font-semibold text-center w-full mt-3">Tenggat Laporan ${pendingReportModule.sch.modul}: ${formatDateFull(pendingReportModule.deadlineDate)}</div>`;
+                }
+            }
+
+            if (!nextModule && !pendingReportModule) {
+                reminderHTML = `<div class="text-center py-3"><div class="w-12 h-12 rounded-full bg-[#2a2a2a] border border-[#333] text-white flex items-center justify-center mx-auto mb-3"><i class="fa-solid fa-check text-xl"></i></div><h3 class="text-[16px] font-bold text-white mb-1">Semua Selesai</h3><p class="text-xs text-gray-400">Tidak ada jadwal atau laporan aktif.</p></div>`;
+            }
+            
+            rCard.innerHTML = reminderHTML;
+            topCard.innerHTML = `<div class="surface-card p-5 border border-[#2a2a2a]">${reminderHTML}</div>`;
+            setTxt('home-modul-count', `${modSelesai}/${currentUser.totalModul}`);
+        }
+
+        function renderTabNilai(mhs, valAkhir, grade, getVal) {
+            const grdColor = getGradeColor(grade);
+
+            let html = `
+                <div class="surface-card p-5 md:p-6 mb-4 border border-[#2a2a2a]">
+                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-4 text-center">Nilai Akhir</p>
+                    <div class="flex items-center justify-center gap-5 md:gap-6">
+                        <span class="font-bold text-4xl md:text-5xl text-white">${valAkhir}</span>
+                        <span class="px-4 py-1.5 font-bold rounded-xl text-2xl ${grdColor}">${grade}</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-4">
+                    <div class="surface-container p-3.5 text-center border border-[#333] rounded-xl"><span class="block text-[9px] text-gray-500 mb-1 font-bold uppercase">Rerata TP</span><span class="font-bold text-white text-[15px]">${getVal('rerata tp')}</span></div>
+                    <div class="surface-container p-3.5 text-center border border-[#333] rounded-xl"><span class="block text-[9px] text-gray-500 mb-1 font-bold uppercase">Rerata Lisan</span><span class="font-bold text-white text-[15px]">${getVal('rerata tl')}</span></div>
+                    <div class="surface-container p-3.5 text-center border border-[#333] rounded-xl"><span class="block text-[9px] text-gray-500 mb-1 font-bold uppercase">Rerata Data</span><span class="font-bold text-white text-[15px]">${getVal('rerata pd')}</span></div>
+                    <div class="surface-container p-3.5 text-center border border-[#333] rounded-xl"><span class="block text-[9px] text-gray-500 mb-1 font-bold uppercase">Rerata Laporan</span><span class="font-bold text-white text-[15px]">${getVal('rerata lap')}</span></div>
+                </div>
+
+                <div class="surface-card p-4 flex items-center justify-between mb-5 bg-[#1a1a1a] border border-[#333]">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-full bg-[#2a2a2a] text-white flex items-center justify-center">
+                            <i class="fa-solid fa-star text-xs"></i>
+                        </div>
+                        <span class="text-[13px] text-gray-300 font-semibold">Nilai Sosialisasi</span>
+                    </div>
+                    <span class="font-bold text-lg text-white">+${getVal('nilai sosialisasi')}</span>
+                </div>
+
+                <div class="space-y-2.5">
+                    <h3 class="text-[12px] font-bold text-gray-300 uppercase tracking-wider mb-3">Rincian Modul</h3>
+            `;
+            let i = 1; const keys = Object.keys(mhs);
+            while(true) {
+                const modKey = keys.find(k => k.trim().toLowerCase() === `modul ${i}`);
+                if(!modKey || !mhs[modKey]) break; 
+                html += `
+                    <div class="surface-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xl border border-[#2a2a2a]">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 shrink-0 rounded-xl bg-[#2a2a2a] border border-[#333] flex items-center justify-center text-sm font-bold text-white">${mhs[modKey]}</div>
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5 font-semibold">Modul ${i}</p>
+                                <p class="text-[11px] text-gray-300">${mhs[keys.find(k=>k.trim().toLowerCase()===`ast ${i}`)]||'-'}</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-4 gap-1.5 bg-[#121212] border border-[#333] p-2 rounded-lg flex-1 md:flex-none">
+                            <div class="text-center p-1"><p class="text-[8px] text-gray-500 mb-0.5 font-bold">TP</p><p class="text-xs font-bold text-white">${formatNilai(mhs[keys.find(k=>k.toLowerCase().startsWith(`tp ${i}`))]||'-')}</p></div>
+                            <div class="text-center p-1"><p class="text-[8px] text-gray-500 mb-0.5 font-bold">TL</p><p class="text-xs font-bold text-white">${formatNilai(mhs[keys.find(k=>k.toLowerCase().startsWith(`tl ${i}`))]||'-')}</p></div>
+                            <div class="text-center p-1"><p class="text-[8px] text-gray-500 mb-0.5 font-bold">PD</p><p class="text-xs font-bold text-white">${formatNilai(mhs[keys.find(k=>k.toLowerCase().startsWith(`pd ${i}`))]||'-')}</p></div>
+                            <div class="text-center p-1"><p class="text-[8px] text-gray-500 mb-0.5 font-bold">LAP</p><p class="text-xs font-bold text-white">${formatNilai(mhs[keys.find(k=>k.toLowerCase().startsWith(`lap ${i}`))]||'-')}</p></div>
+                        </div>
+                    </div>`; i++;
+            }
+            document.getElementById('app-nilai-container').innerHTML = html + `</div>`;
+        }
+
+        function renderAsisten() {
+            const list = document.getElementById('list-asisten-container');
+            list.innerHTML = '';
+            if(!globalData.asisten || globalData.asisten.length === 0) {
+                list.innerHTML = '<p class="text-xs text-gray-500 text-center py-4">Data asisten belum tersedia.</p>'; return;
+            }
+            
+            const kNama = findKey(globalData.asisten[0], 'nama');
+            const kKode = findKey(globalData.asisten[0], 'kode');
+            const kLink = findKey(globalData.asisten[0], 'link telegram');
+            
+            globalData.asisten.sort((a,b) => (a[kNama]||"").localeCompare(b[kNama]||"")).forEach(ast => {
+                if(!ast[kNama]) return;
+                const nama = ast[kNama]; const kode = (ast[kKode]||"").replace(/\[|\]/g, ''); const link = ast[kLink];
+                list.innerHTML += `
+                    <div class="bg-[#1e1e1e] border border-[#333] p-2.5 rounded-xl flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-full bg-[#2a2a2a] text-white flex items-center justify-center font-bold text-xs">${kode}</div>
+                            <div>
+                                <p class="text-[13px] font-semibold text-white leading-tight">${nama}</p>
+                                <p class="text-[9px] text-gray-500 font-mono mt-0.5">Kode: [${kode}]</p>
+                            </div>
+                        </div>
+                        ${link ? `<a href="${link.startsWith('http') ? link : 'https://'+link}" target="_blank" class="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center text-white transition"><i class="fa-brands fa-telegram text-sm"></i></a>` : ''}
+                    </div>`;
+            });
+        }
+
+        async function changePassword() {
+            const oldInput = document.getElementById('input-old-pass');
+            const newInput = document.getElementById('input-new-pass'); 
+            const btn = document.getElementById('btn-change-pass'); 
+            const msg = document.getElementById('pass-msg');
+            
+            const oldPass = oldInput.value.trim();
+            const newPass = newInput.value.trim(); 
+            
+            if(!oldPass || !newPass) {
+                msg.innerText = "Isi kedua kolom password"; msg.className = "text-xs text-red-400 block font-semibold mt-1.5"; return;
+            }
+            
+            const session = JSON.parse(localStorage.getItem('praktikan_session'));
+            if(oldPass !== session.pass) {
+                msg.innerText = "Password lama salah"; msg.className = "text-xs text-red-400 block font-semibold mt-1.5"; return;
+            }
+
+            btn.innerText = 'Menyimpan...'; btn.disabled = true; msg.classList.add('hidden');
+            try {
+                const res = await fetch(`${sheetApiUrl}?action=change_pass&nim=${currentUser.nim}&newpass=${encodeURIComponent(newPass)}`);
+                const json = await res.json();
+                if(json.success) { 
+                    oldInput.value = ''; newInput.value = ''; 
+                    localStorage.setItem('praktikan_session', JSON.stringify({ nim: currentUser.nim, pass: newPass }));
+                    showToast('success', 'Password berhasil diubah.');
+                } 
+                else { msg.innerText = "Gagal mengubah"; msg.className = "text-xs mt-1.5 text-red-400 block font-semibold"; }
+            } catch(e) { msg.innerText = "Error jaringan"; msg.className = "text-xs mt-1.5 text-red-400 block font-semibold"; } 
+            finally { btn.innerText = 'Simpan Password'; btn.disabled = false; }
+        }
+
+        function openModalSuratBebas() { document.getElementById('modal-surat-bebas').classList.remove('hidden'); }
+        function openModalAsisten() { document.getElementById('modal-asisten').classList.remove('hidden'); }
+        
+        function setupRepoLinks() {
+            if(!globalData.link) return;
+            const kJud = findKey(globalData.link[0], 'judul'); const kLnk = findKey(globalData.link[0], 'link');
+            globalData.link.forEach(i => {
+                if(!i[kJud]) return; const j = i[kJud].toLowerCase();
+                if(j.includes('file')) { const f = document.getElementById('repo-link-materi'); if(f) f.href = i[kLnk]; }
+                if(j.includes('alat')) { const a = document.getElementById('repo-link-alat'); if(a) a.href = i[kLnk]; }
+                if(j.includes('transparansi nilai')) { const p = document.getElementById('repo-link-pdf'); if(p) p.href = i[kLnk]; const pw = document.getElementById('repo-pdf-wrapper'); if(pw) pw.style.display = isTransparansiAktif ? 'flex' : 'none'; }
+                if(j.includes('pengajuan surat')) { const rs = document.getElementById('link-surat-req'); if(rs) rs.href = i[kLnk]; }
+                if(j.includes('ambil surat bebas')) { const gs = document.getElementById('link-surat-get'); if(gs) gs.href = i[kLnk]; }
+            });
+        }
+
+        // ====== FUNGSI PRESENSI & QR CODE ====== //
+        function getActivePraktikum() {
+            const nowTime = new Date().getTime();
+            let active = null;
+            for (let i = 0; i < scheduleData.length; i++) {
+                let sch = scheduleData[i];
+                let schDate = parseDateLocal(sch.tanggal);
+                let startTime = schDate.getTime();
+                let endTime = startTime + (7 * 24 * 60 * 60 * 1000) + (23 * 60 * 60 * 1000) + (59 * 60 * 1000); 
+                
+                if (nowTime >= startTime && nowTime <= endTime) {
+                    active = sch; break;
+                }
+            }
+            return active;
+        }
+
+        function getPresensiLinkData() {
+            const jur = currentUser.jurusan.toLowerCase().replace('teknik', '').trim();
+            const kJud = findKey(globalData.link[0], 'judul');
+            const kLnk = findKey(globalData.link[0], 'link');
+            const kTamb = findKey(globalData.link[0], 'tambahan');
+
+            let row = globalData.link.find(i => String(i[kJud]).toLowerCase().includes('presensi') && String(i[kJud]).toLowerCase().includes(jur));
+            if (!row) row = globalData.link.find(i => String(i[kJud]).toLowerCase() === 'presensi umum'); 
+            
+            if (!row) return null;
+            return { formLink: row[kLnk], validator: row[kTamb] ? String(row[kTamb]).trim() : "" };
+        }
+
+        function openPresensiFlow() {
+            const activeSch = getActivePraktikum();
+            if (!activeSch) {
+                showToast('error', 'Belum ada praktikum yang selesai.'); return;
+            }
+            const presensiData = getPresensiLinkData();
+            if (!presensiData || !presensiData.formLink) {
+                showToast('error', 'Link presensi belum diatur.'); return;
+            }
+            
+            const presensiKey = `presensi_${currentUser.nim}_${activeSch.putaran}_${activeSch.modul}`;
+            if(localStorage.getItem(presensiKey) === 'true') {
+                showToast('error', 'Anda sudah presensi untuk modul ini.'); return;
+            }
+
+            tempDataPresensi = { sch: activeSch, linkData: presensiData };
+
+            if (!presensiData.validator) {
+                openPresensiFormModal();
+            } else {
+                document.getElementById('modal-qr-scanner').classList.remove('hidden');
+                if (!html5QrcodeScanner) { html5QrcodeScanner = new Html5Qrcode("qr-reader"); }
+                html5QrcodeScanner.start(
+                    { facingMode: "environment" }, { fps: 10 },
+                    (decodedText) => {
+                        const isValid = decodedText.trim().toLowerCase().includes(presensiData.validator.toLowerCase());
+                        if (isValid) {
+                            closeQRScanner();
+                            openPresensiFormModal();
+                        } else {
+                            showToast('error', 'QR tidak sesuai.');
+                        }
+                    },
+                    (err) => { }
+                ).catch(err => {
+                    showToast('error', 'Kamera tidak dapat diakses.');
+                    closeQRScanner(); 
+                });
+            }
+        }
+
+        function closeQRScanner() {
+            document.getElementById('modal-qr-scanner').classList.add('hidden');
+            if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
+                html5QrcodeScanner.stop().catch(e => console.error(e));
+            }
+        }
+
+        function openPresensiFormModal() {
+            const formEl = document.getElementById('presensi-gform-sim');
+            formEl.dataset.link = tempDataPresensi.linkData.formLink;
+            
+            document.getElementById('pre-putaran').innerText = tempDataPresensi.sch.putaran;
+            document.getElementById('pre-modul').innerText = tempDataPresensi.sch.modul;
+            
+            const selectAst = document.getElementById('presensi-asisten');
+            selectAst.innerHTML = '<option value="">-- Pilih Asisten Anda --</option>';
+            if (globalData.asisten && globalData.asisten.length > 0) {
+                const kNama = findKey(globalData.asisten[0], 'nama');
+                const kKode = findKey(globalData.asisten[0], 'kode');
+                globalData.asisten.sort((a,b) => (a[kNama]||"").localeCompare(b[kNama]||"")).forEach(ast => {
+                    if(ast[kNama]) {
+                        let kode = (ast[kKode]||"").replace(/\[|\]/g, '');
+                        let formatKirim = `${ast[kNama]} [${kode}]`;
+                        selectAst.innerHTML += `<option value="${formatKirim}">${formatKirim}</option>`;
+                    }
+                });
+            }
+
+            const kritsarContainer = document.getElementById('kritsar-container');
+            const k1 = document.getElementById('kritsar-mekanisme');
+            const k2 = document.getElementById('kritsar-sarana');
+            const k3 = document.getElementById('kritsar-asisten');
+            
+            k1.value = ''; k2.value = ''; k3.value = '';
+
+            if (tempDataPresensi.sch.putaran == currentUser.totalModul) {
+                kritsarContainer.classList.remove('hidden');
+                kritsarContainer.classList.add('flex');
+                k1.required = true; k2.required = true; k3.required = true;
+            } else {
+                kritsarContainer.classList.add('hidden');
+                kritsarContainer.classList.remove('flex');
+                k1.required = false; k2.required = false; k3.required = false;
+            }
+
+            document.getElementById('modal-presensi-form').classList.remove('hidden');
+        }
+
+        let isSubmittingPresensi = false;
+        function submitPresensiForm(e) {
+            e.preventDefault();
+            if (isSubmittingPresensi) return;
+
+            const asistenSelect = document.getElementById('presensi-asisten').value;
+            const baseLink = document.getElementById('presensi-gform-sim').dataset.link;
+            const btnSubmit = document.getElementById('btn-submit-presensi');
+            
+            try {
+                const url = new URL(baseLink);
+                let actionUrl = url.origin + url.pathname.replace('/viewform', '/formResponse');
+                
+                let entries = {};
+                for (let [key, value] of url.searchParams.entries()) {
+                    if (key.startsWith('entry.')) {
+                        entries[value.toLowerCase().trim()] = key;
+                    }
+                }
+
+                let bodyParts = [];
+                if(entries['nama']) bodyParts.push(`${entries['nama']}=${encodeURIComponent(currentUser.namaLengkap)}`);
+                if(entries['nim']) bodyParts.push(`${entries['nim']}=${encodeURIComponent(currentUser.nim)}`);
+                if(entries['kelompok']) bodyParts.push(`${entries['kelompok']}=${encodeURIComponent(currentUser.kelSedang)}`);
+                if(entries['putaran']) bodyParts.push(`${entries['putaran']}=${encodeURIComponent(tempDataPresensi.sch.putaran)}`);
+                if(entries['modul']) bodyParts.push(`${entries['modul']}=${encodeURIComponent(tempDataPresensi.sch.modul)}`);
+                if(entries['asisten']) bodyParts.push(`${entries['asisten']}=${encodeURIComponent(asistenSelect)}`);
+
+                if (tempDataPresensi.sch.putaran == currentUser.totalModul) {
+                    let valK1 = document.getElementById('kritsar-mekanisme').value.trim() || "-";
+                    let valK2 = document.getElementById('kritsar-sarana').value.trim() || "-";
+                    let valK3 = document.getElementById('kritsar-asisten').value.trim() || "-";
+
+                    if(entries['kritsar1']) bodyParts.push(`${entries['kritsar1']}=${encodeURIComponent(valK1)}`);
+                    if(entries['kritsar2']) bodyParts.push(`${entries['kritsar2']}=${encodeURIComponent(valK2)}`);
+                    if(entries['kritsar3']) bodyParts.push(`${entries['kritsar3']}=${encodeURIComponent(valK3)}`);
+                    
+                    bodyParts.push('pageHistory=0,1');
+                } else {
+                    bodyParts.push('pageHistory=0');
+                }
+
+                const formDataString = bodyParts.join('&');
+
+                isSubmittingPresensi = true;
+                btnSubmit.innerText = 'Mengirim...';
+                btnSubmit.classList.add('opacity-70', 'cursor-not-allowed');
+
+                fetch(actionUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formDataString
+                }).then(() => {
+                    showToast('success', 'Presensi Berhasil.');
+                    
+                    const presensiKey = `presensi_${currentUser.nim}_${tempDataPresensi.sch.putaran}_${tempDataPresensi.sch.modul}`;
+                    localStorage.setItem(presensiKey, 'true');
+                    
+                    document.getElementById('modal-presensi-form').classList.add('hidden');
+                    renderJadwal();
+                    
+                }).catch(networkError => {
+                    showToast('error', `Gagal Terkirim.`);
+                }).finally(() => {
+                    isSubmittingPresensi = false;
+                    btnSubmit.innerText = 'Kirim Presensi';
+                    btnSubmit.classList.remove('opacity-70', 'cursor-not-allowed');
+                });
+            } catch (err) {
+                showToast('error', `Format link presensi bermasalah: ${err.message}`);
+                isSubmittingPresensi = false;
+                btnSubmit.innerText = 'Kirim Presensi';
+                btnSubmit.classList.remove('opacity-70', 'cursor-not-allowed');
+            }
+        }
+
+        // PWA INSTALL
+        let deferredPrompt;
+        const btnInstallPwa = document.getElementById('btn-install-pwa');
+
+        const isIos = () => {
+            const userAgent = window.navigator.userAgent.toLowerCase();
+            return /iphone|ipad|ipod/.test(userAgent);
+        };
+        const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone) || window.matchMedia('(display-mode: standalone)').matches;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); 
+            deferredPrompt = e; 
+            if (!isInStandaloneMode() && btnInstallPwa) {
+                btnInstallPwa.classList.remove('hidden');
+            }
+        });
+
+        if(btnInstallPwa) {
+            btnInstallPwa.addEventListener('click', async () => {
+                if (isIos()) {
+                    alert("Untuk install di iPhone/iPad:\n1. Tekan tombol 'Share' di bawah browser.\n2. Pilih 'Add to Home Screen' (+)");
+                    return;
+                }
+                
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`PWA Install status: ${outcome}`);
+                    if (outcome === 'accepted') {
+                        btnInstallPwa.classList.add('hidden');
+                    }
+                    deferredPrompt = null;
+                }
+            });
+        }
+
+        if (isIos() && !isInStandaloneMode() && btnInstallPwa) {
+            btnInstallPwa.classList.remove('hidden');
+            btnInstallPwa.querySelector('span').innerText = "Panduan Install iOS";
+        }
+
+        window.addEventListener('DOMContentLoaded', initApp);
+        function openModalLupaPassword() { document.getElementById('modal-lupa-password').classList.remove('hidden'); }
+        function closeModalLupaPassword() { document.getElementById('modal-lupa-password').classList.add('hidden'); }   
+        
+    </script>
+</body>
+</html>

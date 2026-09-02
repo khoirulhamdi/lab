@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - Lab Fisika Terapan</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  body { margin:0; font-family:'Plus Jakarta Sans',sans-serif; background:#121212; color:#e0e0e0; }
+  .surface-card { background:#1e1e1e; border-radius:16px; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; font-size:13px; color:#a0a0a0; cursor:pointer; }
+  .nav-item:hover { background:#242424; color:#fff; }
+  .nav-item.active { background:rgba(37,99,235,0.15); color:#fff; font-weight:600; }
+  table { border-collapse:collapse; width:100%; font-size:12.5px; }
+  th, td { padding:8px 10px; text-align:left; border-bottom:1px solid #262626; white-space:nowrap; }
+  th { color:#888; font-weight:600; text-transform:uppercase; font-size:10.5px; letter-spacing:.03em; position:sticky; top:0; background:#1e1e1e; }
+  tr:hover td { background:#1a1a1a; }
+  .btn { padding:6px 12px; border-radius:8px; font-size:12.5px; font-weight:600; cursor:pointer; }
+  .btn-primary { background:#2563eb; color:#fff; }
+  .btn-primary:hover { background:#1d4ed8; }
+  .btn-danger { background:#3f1d1d; color:#f87171; }
+  .btn-danger:hover { background:#5a2323; }
+  .btn-ghost { background:#2a2a2a; color:#ccc; }
+  .btn-ghost:hover { background:#333; }
+  input, select, textarea { background:#2a2a2a; border:1px solid #333; border-radius:8px; padding:8px 10px; font-size:13px; color:#eee; width:100%; }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:#2563eb; }
+  ::-webkit-scrollbar { width:6px; height:6px; }
+  ::-webkit-scrollbar-thumb { background:#3a3a3a; border-radius:10px; }
+</style>
+</head>
+<body>
+  <div class="flex h-screen overflow-hidden">
+    <aside class="w-60 shrink-0 border-r border-[#242424] p-4 flex flex-col overflow-y-auto">
+      <div class="flex items-center gap-2 mb-6 px-1">
+        <i class="fa-solid fa-shield-halved text-blue-500"></i>
+        <div>
+          <div class="text-sm font-bold leading-tight">Admin Panel</div>
+          <div class="text-[10px] text-gray-500">Lab Fisika Terapan</div>
+        </div>
+      </div>
+      <nav id="nav" class="flex flex-col gap-1 flex-1"></nav>
+      <div class="border-t border-[#242424] pt-3 mt-3">
+        <div class="px-1 mb-2">
+          <div id="me-nama" class="text-xs font-semibold truncate">-</div>
+          <div id="me-role" class="text-[10px] text-gray-500"></div>
+        </div>
+        <button id="btn-logout" class="nav-item w-full text-red-400 hover:text-red-300">
+          <i class="fa-solid fa-right-from-bracket w-4"></i> Keluar
+        </button>
+      </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto p-6">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h1 id="section-title" class="text-lg font-bold">-</h1>
+          <p id="section-desc" class="text-xs text-gray-500"></p>
+        </div>
+        <div class="flex items-center gap-2">
+          <input id="search-box" placeholder="Cari..." class="w-56 !py-2 text-xs" />
+          <button id="btn-add" class="btn btn-primary"><i class="fa-solid fa-plus mr-1"></i>Tambah</button>
+        </div>
+      </div>
+      <div class="surface-card border border-[#242424] overflow-auto" style="max-height: calc(100vh - 160px);">
+        <table id="data-table"><thead><tr></tr></thead><tbody></tbody></table>
+      </div>
+      <p id="row-count" class="text-[11px] text-gray-500 mt-2"></p>
+    </main>
+  </div>
+
+  <!-- Modal form -->
+  <div id="modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50">
+    <div class="surface-card w-full max-w-lg border border-[#2a2a2a] p-6 max-h-[85vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h2 id="modal-title" class="text-sm font-bold">Form</h2>
+        <button id="modal-close" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="modal-form" class="space-y-3"></form>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-5 right-5 hidden z-50">
+    <div id="toast-body" class="surface-card border border-[#2a2a2a] px-4 py-3 text-xs font-semibold shadow-xl"></div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>

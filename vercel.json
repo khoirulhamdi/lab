@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/api/gas", "destination": "https://vscrxtwtopdrnhphidxt.supabase.co/functions/v1/gas" }
+  ]
+}

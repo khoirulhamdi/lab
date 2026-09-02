@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login Admin - Lab Fisika Terapan</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  body { margin:0; font-family:'Plus Jakarta Sans',sans-serif; background:#121212; color:#e0e0e0; }
+  .surface-card { background:#1e1e1e; border-radius:20px; }
+  input:focus { outline:none; }
+</style>
+</head>
+<body class="min-h-screen flex items-center justify-center px-4">
+  <div class="surface-card w-full max-w-sm p-8 border border-[#2a2a2a]">
+    <div class="text-center mb-6">
+      <i class="fa-solid fa-shield-halved text-3xl text-blue-500 mb-2"></i>
+      <h1 class="text-lg font-bold">Admin Panel</h1>
+      <p class="text-xs text-gray-500">Lab Fisika Terapan</p>
+    </div>
+    <form id="login-form" class="space-y-4">
+      <div>
+        <label class="text-xs text-gray-400 mb-1 block">Email</label>
+        <input id="email" type="email" required class="w-full bg-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm border border-transparent focus:border-blue-600">
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 mb-1 block">Password</label>
+        <input id="password" type="password" required class="w-full bg-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm border border-transparent focus:border-blue-600">
+      </div>
+      <p id="err" class="hidden text-xs text-red-400"></p>
+      <button id="btn" type="submit" class="w-full bg-blue-600 hover:bg-blue-700 transition rounded-xl py-2.5 text-sm font-semibold">Masuk</button>
+    </form>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const sb = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
+
+    (async () => {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) window.location.href = "index.html";
+    })();
+
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("btn");
+      const err = document.getElementById("err");
+      err.classList.add("hidden");
+      btn.disabled = true; btn.innerText = "Memverifikasi...";
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error || !data.session) {
+        err.innerText = "Email atau password salah.";
+        err.classList.remove("hidden");
+        btn.disabled = false; btn.innerText = "Masuk";
+        return;
+      }
+
+      // pastikan dia admin aktif, bukan cuma auth user biasa
+      const { data: adminRow, error: adminErr } = await sb
+        .from("admin_users").select("is_active").eq("id", data.session.user.id).single();
+
+      if (adminErr || !adminRow || !adminRow.is_active) {
+        err.innerText = "Akun ini tidak punya akses admin (atau sudah dicabut).";
+        err.classList.remove("hidden");
+        await sb.auth.signOut();
+        btn.disabled = false; btn.innerText = "Masuk";
+        return;
+      }
+
+      window.location.href = "index.html";
+    });
+  </script>
+</body>
+</html>

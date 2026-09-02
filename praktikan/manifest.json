@@ -1,0 +1,23 @@
+{
+  "name": "Portal Praktikan - Lab Fister",
+  "short_name": "Lab Fisika Terapan",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1e1e1e",
+  "theme_color": "#1e1e1e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://i.ibb.co.com/nqxh13MB/logo-fister.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://i.ibb.co.com/nqxh13MB/logo-fister.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
