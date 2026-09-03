@@ -205,6 +205,21 @@ document.getElementById("btn-logout").addEventListener("click", async () => {
 });
 
 // =====================================================================
+// Sidebar drawer (mobile)
+// =====================================================================
+function openSidebar() {
+  document.getElementById("sidebar").classList.add("open");
+  document.getElementById("sidebar-backdrop").classList.add("show");
+}
+function closeSidebar() {
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("sidebar-backdrop").classList.remove("show");
+}
+document.getElementById("btn-open-sidebar").onclick = openSidebar;
+document.getElementById("btn-close-sidebar").onclick = closeSidebar;
+document.getElementById("sidebar-backdrop").onclick = closeSidebar;
+
+// =====================================================================
 // Sidebar nav (menu utama)
 // =====================================================================
 function buildNav() {
