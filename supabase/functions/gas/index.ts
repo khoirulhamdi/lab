@@ -105,40 +105,60 @@ async function buildAsisten() {
 // pakai substring-match berbasis urutan insersi key.
 // ---------------------------------------------------------------------
 async function buildJadwal() {
-  const { data, error } = await supabase
-    .from("jadwal_praktikum")
-    .select(`
-      putaran, tanggal, hari, modul_text, jurusan_baris, kode_jurusan_baris,
-      shift1_kode, shift2_kode, shift3_kode, shift4_kode,
-      shift1_jam, shift2_jam, shift3_jam, shift4_jam,
-      praktikan:praktikan_id ( nim, nama_lengkap, password,
-        kelompok_besar, kelompok_sedang, kelompok_kecil )
-    `)
-    .order("tanggal");
-  if (error) throw error;
+  // PENTING: query dimulai dari tabel `praktikan` (bukan `jadwal_praktikum`)
+  // supaya praktikan yang BELUM punya jadwal sekalipun tetap muncul di sini
+  // (identitas login tidak boleh bergantung pada adanya baris jadwal).
+  const [{ data: praktikanList, error: e1 }, { data: jadwalRows, error: e2 }] = await Promise.all([
+    supabase.from("praktikan")
+      .select("id, nim, nama_lengkap, password, kelompok_besar, kelompok_sedang, kelompok_kecil"),
+    supabase.from("jadwal_praktikum")
+      .select(`
+        praktikan_id, putaran, tanggal, hari, modul_text, jurusan_baris, kode_jurusan_baris,
+        shift1_kode, shift2_kode, shift3_kode, shift4_kode,
+        shift1_jam, shift2_jam, shift3_jam, shift4_jam
+      `)
+      .order("tanggal"),
+  ]);
+  if (e1) throw e1;
+  if (e2) throw e2;
 
-  return (data ?? []).map((r: any) => ({
-    "Kelompok Besar": r.praktikan?.kelompok_besar ?? "",
-    "Kelompok Sedang": r.praktikan?.kelompok_sedang ?? "",
-    "Kelompok Kecil": r.praktikan?.kelompok_kecil ?? "",
-    "NIM": r.praktikan?.nim ?? "",
-    "Nama Lengkap": r.praktikan?.nama_lengkap ?? "",
-    "Password": r.praktikan?.password ?? "",
-    "Putaran": r.putaran,
-    "Tanggal": fmtTanggal(r.tanggal),
-    "Shift 1": r.shift1_kode ?? "",
-    "Shift 2": r.shift2_kode ?? "",
-    "Shift 3": r.shift3_kode ?? "",
-    "Shift 4": r.shift4_kode ?? "",
-    "Modul": r.modul_text ?? "",
-    "Jurusan": r.jurusan_baris ?? "",
-    "Kode Jurusan": r.kode_jurusan_baris ?? "",
-    "Hari": r.hari ?? "",
-    "S1": r.shift1_jam ?? "",
-    "S2": r.shift2_jam ?? "",
-    "S3": r.shift3_jam ?? "",
-    "S4": r.shift4_jam ?? "",
-  }));
+  const byPraktikan = new Map<string, any[]>();
+  for (const r of jadwalRows ?? []) {
+    if (!byPraktikan.has(r.praktikan_id)) byPraktikan.set(r.praktikan_id, []);
+    byPraktikan.get(r.praktikan_id)!.push(r);
+  }
+
+  const out: Record<string, unknown>[] = [];
+  for (const p of praktikanList ?? []) {
+    // kalau belum ada jadwal sama sekali, tetap emit 1 baris identitas
+    // (field jadwal kosong) supaya NIM+password tetap kebaca saat login
+    const rows = byPraktikan.get(p.id) ?? [null];
+    for (const r of rows) {
+      out.push({
+        "Kelompok Besar": p.kelompok_besar ?? "",
+        "Kelompok Sedang": p.kelompok_sedang ?? "",
+        "Kelompok Kecil": p.kelompok_kecil ?? "",
+        "NIM": p.nim,
+        "Nama Lengkap": p.nama_lengkap,
+        "Password": p.password,
+        "Putaran": r?.putaran ?? "",
+        "Tanggal": r ? fmtTanggal(r.tanggal) : "",
+        "Shift 1": r?.shift1_kode ?? "",
+        "Shift 2": r?.shift2_kode ?? "",
+        "Shift 3": r?.shift3_kode ?? "",
+        "Shift 4": r?.shift4_kode ?? "",
+        "Modul": r?.modul_text ?? "",
+        "Jurusan": r?.jurusan_baris ?? "",
+        "Kode Jurusan": r?.kode_jurusan_baris ?? "",
+        "Hari": r?.hari ?? "",
+        "S1": r?.shift1_jam ?? "",
+        "S2": r?.shift2_jam ?? "",
+        "S3": r?.shift3_jam ?? "",
+        "S4": r?.shift4_jam ?? "",
+      });
+    }
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------
