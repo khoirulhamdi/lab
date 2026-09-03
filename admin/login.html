@@ -67,7 +67,16 @@
         .from("admin_users").select("is_active").eq("id", data.session.user.id).single();
 
       if (adminErr || !adminRow || !adminRow.is_active) {
-        err.innerText = "Akun ini tidak punya akses admin (atau sudah dicabut).";
+        // tampilkan detail error asli + UID yang lagi login, buat debug cepat
+        // kalau id di admin_users tidak cocok / RLS nolak / dsb.
+        console.error("admin_users lookup gagal:", adminErr, "| auth uid:", data.session.user.id);
+        if (adminErr) {
+          err.innerText = `Gagal cek akses admin: ${adminErr.message} (uid: ${data.session.user.id}). Cek console (F12) untuk detail.`;
+        } else if (!adminRow) {
+          err.innerText = `Tidak ada baris admin_users dengan id = ${data.session.user.id}. Pastikan id ini persis sama dengan yang di-insert.`;
+        } else {
+          err.innerText = "Akun ini sudah dicabut aksesnya (is_active = false).";
+        }
         err.classList.remove("hidden");
         await sb.auth.signOut();
         btn.disabled = false; btn.innerText = "Masuk";
