@@ -10,35 +10,72 @@
 <style>
   body { margin:0; font-family:'Plus Jakarta Sans',sans-serif; background:#121212; color:#e0e0e0; }
   .surface-card { background:#1e1e1e; border-radius:16px; }
-  .nav-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; font-size:13px; color:#a0a0a0; cursor:pointer; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:10px; font-size:13.5px; color:#a0a0a0; cursor:pointer; font-weight:500; }
   .nav-item:hover { background:#242424; color:#fff; }
-  .nav-item.active { background:rgba(37,99,235,0.15); color:#fff; font-weight:600; }
+  .nav-item.active { background:rgba(37,99,235,0.15); color:#fff; font-weight:700; }
+  .subtab { padding:7px 14px; border-radius:9px; font-size:12.5px; font-weight:600; color:#999; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+  .subtab:hover { background:#242424; color:#fff; }
+  .subtab.active { background:#2563eb; color:#fff; }
   table { border-collapse:collapse; width:100%; font-size:12.5px; }
   th, td { padding:8px 10px; text-align:left; border-bottom:1px solid #262626; white-space:nowrap; }
   th { color:#888; font-weight:600; text-transform:uppercase; font-size:10.5px; letter-spacing:.03em; position:sticky; top:0; background:#1e1e1e; }
   tr:hover td { background:#1a1a1a; }
-  .btn { padding:6px 12px; border-radius:8px; font-size:12.5px; font-weight:600; cursor:pointer; }
+  .btn { padding:6px 12px; border-radius:8px; font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap; }
   .btn-primary { background:#2563eb; color:#fff; }
   .btn-primary:hover { background:#1d4ed8; }
   .btn-danger { background:#3f1d1d; color:#f87171; }
   .btn-danger:hover { background:#5a2323; }
   .btn-ghost { background:#2a2a2a; color:#ccc; }
   .btn-ghost:hover { background:#333; }
+  .chip { display:inline-flex; align-items:center; gap:6px; background:#2a2a2a; border:1px solid #333; padding:3px 8px 3px 10px; border-radius:999px; font-size:11.5px; margin:2px; }
+  .chip button { color:#f87171; }
+  .stat-card { background:#1e1e1e; border-radius:16px; padding:18px; border:1px solid #242424; }
   input, select, textarea { background:#2a2a2a; border:1px solid #333; border-radius:8px; padding:8px 10px; font-size:13px; color:#eee; width:100%; }
   input:focus, select:focus, textarea:focus { outline:none; border-color:#2563eb; }
+  .badge-jurusan { font-size:10.5px; background:#1e293b; color:#93c5fd; padding:2px 7px; border-radius:6px; white-space:nowrap; }
   ::-webkit-scrollbar { width:6px; height:6px; }
   ::-webkit-scrollbar-thumb { background:#3a3a3a; border-radius:10px; }
+
+  /* ---------- Sidebar: drawer di mobile, statis di desktop ---------- */
+  #sidebar {
+    position: fixed; inset: 0 auto 0 0; width: 240px; z-index: 40;
+    transform: translateX(-100%); transition: transform .25s ease;
+  }
+  #sidebar.open { transform: translateX(0); }
+  #sidebar-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:30; }
+  #sidebar-backdrop.show { display:block; }
+  #mobile-topbar { display:flex; }
+
+  @media (min-width: 768px) {
+    #sidebar { position: static; transform: none; width: 224px; }
+    #sidebar-backdrop { display:none !important; }
+    #mobile-topbar { display:none; }
+  }
 </style>
 </head>
 <body>
-  <div class="flex h-screen overflow-hidden">
-    <aside class="w-60 shrink-0 border-r border-[#242424] p-4 flex flex-col overflow-y-auto">
-      <div class="flex items-center gap-2 mb-6 px-1">
-        <i class="fa-solid fa-shield-halved text-blue-500"></i>
-        <div>
-          <div class="text-sm font-bold leading-tight">Admin Panel</div>
-          <div class="text-[10px] text-gray-500">Lab Fisika Terapan</div>
+  <!-- Top bar khusus mobile -->
+  <div id="mobile-topbar" class="md:hidden items-center justify-between px-4 py-3 border-b border-[#242424] sticky top-0 bg-[#121212] z-20">
+    <div class="flex items-center gap-2">
+      <i class="fa-solid fa-shield-halved text-blue-500"></i>
+      <span class="text-sm font-bold">Admin Panel</span>
+    </div>
+    <button id="btn-open-sidebar" class="text-xl px-2"><i class="fa-solid fa-bars"></i></button>
+  </div>
+
+  <div id="sidebar-backdrop"></div>
+
+  <div class="flex h-screen md:h-screen overflow-hidden">
+    <aside id="sidebar" class="shrink-0 border-r border-[#242424] p-4 flex flex-col overflow-y-auto bg-[#121212] h-full">
+      <div class="flex items-center justify-between mb-6 px-1">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-shield-halved text-blue-500"></i>
+          <div>
+            <div class="text-sm font-bold leading-tight">Admin Panel</div>
+            <div class="text-[10px] text-gray-500">Lab Fisika Terapan</div>
+          </div>
         </div>
+        <button id="btn-close-sidebar" class="md:hidden text-gray-500 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <nav id="nav" class="flex flex-col gap-1 flex-1"></nav>
       <div class="border-t border-[#242424] pt-3 mt-3">
@@ -52,27 +89,34 @@
       </div>
     </aside>
 
-    <main class="flex-1 overflow-y-auto p-6">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <h1 id="section-title" class="text-lg font-bold">-</h1>
-          <p id="section-desc" class="text-xs text-gray-500"></p>
-        </div>
-        <div class="flex items-center gap-2">
-          <input id="search-box" placeholder="Cari..." class="w-56 !py-2 text-xs" />
-          <button id="btn-add" class="btn btn-primary"><i class="fa-solid fa-plus mr-1"></i>Tambah</button>
-        </div>
+    <main class="flex-1 overflow-y-auto p-4 md:p-6">
+      <div class="mb-4">
+        <h1 id="section-title" class="text-lg font-bold">-</h1>
+        <p id="section-desc" class="text-xs text-gray-500"></p>
       </div>
-      <div class="surface-card border border-[#242424] overflow-auto" style="max-height: calc(100vh - 160px);">
-        <table id="data-table"><thead><tr></tr></thead><tbody></tbody></table>
+
+      <div id="subtabs" class="flex items-center gap-1 mb-4 border-b border-[#242424] pb-3 overflow-x-auto"></div>
+
+      <div id="panel-dashboard" class="hidden"></div>
+
+      <div id="panel-generic" class="hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+          <input id="search-box" placeholder="Cari..." class="w-full sm:w-64 !py-2 text-xs" />
+          <button id="btn-add" class="btn btn-primary self-start sm:self-auto"><i class="fa-solid fa-plus mr-1"></i>Tambah</button>
+        </div>
+        <div class="surface-card border border-[#242424] overflow-auto" style="max-height: calc(100vh - 280px);">
+          <table id="data-table"><thead><tr></tr></thead><tbody></tbody></table>
+        </div>
+        <p id="row-count" class="text-[11px] text-gray-500 mt-2"></p>
       </div>
-      <p id="row-count" class="text-[11px] text-gray-500 mt-2"></p>
+
+      <div id="panel-custom" class="hidden"></div>
     </main>
   </div>
 
   <!-- Modal form -->
   <div id="modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50">
-    <div class="surface-card w-full max-w-lg border border-[#2a2a2a] p-6 max-h-[85vh] overflow-y-auto">
+    <div class="surface-card w-full max-w-lg border border-[#2a2a2a] p-5 md:p-6 max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
         <h2 id="modal-title" class="text-sm font-bold">Form</h2>
         <button id="modal-close" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
@@ -82,7 +126,7 @@
   </div>
 
   <!-- Toast -->
-  <div id="toast" class="fixed bottom-5 right-5 hidden z-50">
+  <div id="toast" class="fixed bottom-5 right-5 left-5 sm:left-auto hidden z-50">
     <div id="toast-body" class="surface-card border border-[#2a2a2a] px-4 py-3 text-xs font-semibold shadow-xl"></div>
   </div>
 
